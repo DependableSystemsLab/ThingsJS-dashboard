@@ -12,7 +12,7 @@ export default class Base extends React.Component {
 	render(){
 		return (
 			<div>
-				<Navbar inverse staticTop collapseOnSelect>
+				<Navbar fluid inverse staticTop collapseOnSelect>
 				  <Navbar.Header>
 				    <Navbar.Brand>
 				      <a href="/#/">

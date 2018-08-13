@@ -1,0 +1,17 @@
+.terminal {
+	background: black;
+	color: white;
+	min-height: 1em;
+	max-height: 12em;
+	max-width: 800px;
+	overflow: auto;
+	padding: 0.5em;
+}
+.terminal p {
+	font-size: 1em;
+	font-family: Courier New;
+	font-weight: 600;
+	line-height: 1em;
+	margin-bottom: 4px;
+	word-wrap: break-word;
+}

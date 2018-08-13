@@ -2,6 +2,8 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {Panel, Form, FormControl, ButtonGroup, Button, Row, Col, Table, Image, Badge} from 'react-bootstrap';
 
+import DeviceConsole from '../DeviceConsole/';
+
 function DeviceInfo(props){
 	return (
 		<Row>
@@ -40,6 +42,12 @@ class DevicePanel extends React.Component {
 		}
 	}
 
+	setViewMode(mode){
+		this.setState({
+			view_mode: mode
+		});
+	}
+
 	selectEngine(engine_id){
 		this.setState({
 			engine: (engine_id ? this.props.engines[engine_id] : null)
@@ -52,8 +60,14 @@ class DevicePanel extends React.Component {
 			if (this.state.view_mode === 'info'){
 				panelBody = <DeviceInfo engine={this.state.engine}/>
 			}
+			else if (this.state.view_mode === 'graph'){
+				panelBody = <p>Graph</p>
+			}
+			else if (this.state.view_mode === 'console'){
+				panelBody = <DeviceConsole lines={this.state.engine.console}/>
+			}
 			else {
-				panelBody = <p>Unknown</p>
+				panelBody = <p>Unknown Mode</p>
 			}
 		}
 		else {
@@ -75,9 +89,9 @@ class DevicePanel extends React.Component {
 						</FormControl>
 					</Form>
 					<ButtonGroup>
-						<Button>Info</Button>
-						<Button>Graph</Button>
-						<Button>Console</Button>
+						<Button onClick={(e)=>this.setViewMode('info')}>Info</Button>
+						<Button onClick={(e)=>this.setViewMode('graph')}>Graph</Button>
+						<Button onClick={(e)=>this.setViewMode('console')}>Console</Button>
 					</ButtonGroup>
 				</Panel.Heading>
 				<Panel.Body>
