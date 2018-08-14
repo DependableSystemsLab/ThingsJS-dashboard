@@ -1,7 +1,7 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormControl,
-		ButtonGroup, Button, ListGroup, ListGroupItem, Image, Badge} from 'react-bootstrap';
+import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormControl, 
+		ButtonGroup, Button, ListGroup, ListGroupItem, InputGroup, Image, Badge} from 'react-bootstrap';
 
 import AceEditor from 'react-ace';
 
@@ -23,9 +23,10 @@ class FileSystemViewer extends React.Component {
 			cur_selection: {},
 			mkdir_name: ''
 		}
+
 	}
 
-	refresh() {
+	refresh(){
         this.$dash.fs.get(this.state.cur_path)
             .then((fsObject)=>{
                 console.log(fsObject);
@@ -64,14 +65,22 @@ class FileSystemViewer extends React.Component {
         // this.refresh();
 	}
 
-	makeDir(dir_name) {
+	makeDir(dir_name){
+		if(this.state.mkdir_name === ''){
+			return;
+		}
         this.$dash.fs.makeDir(this.state.cur_path, this.state.mkdir_name)
             .then((dir)=>{
                 console.log("directory saved", dir);
+                this.setState({ mkdir_name: '' });
                 this.refresh();
             });
     }
-    saveFile() {
+
+    saveFile(){
+    	if(this.state.cur_file.name === ''){
+    		return;
+    	}
         this.$dash.fs.writeFile(this.state.cur_path, this.state.cur_file)
             .then((file)=>{
                 console.log("file saved", file);
@@ -85,7 +94,15 @@ class FileSystemViewer extends React.Component {
             });
     }
 
-	clearAll() {
+    deleteSelection(){
+    	console.log('trying to delete: ' + Object.keys(this.state.cur_selection));
+    	this.$dash.fs.delete(this.state.cur_path, Object.keys(this.state.cur_selection))
+    		.then((res)=>{
+    			this.refresh();
+    		});
+    }
+
+	clearAll(){
 		this.setState({
 			cur_file: {
 				name: '',
@@ -95,14 +112,27 @@ class FileSystemViewer extends React.Component {
 		})
     }
 
-    selectCode(code) {
-        self.cur_code._id = code._id;
-        self.cur_code.name = code.name;
-        self.cur_code.content = code.content;
+    selectCode(code){
+    	this.setState({
+    		cur_file: {
+    			_id: code._id,
+    			name: code.name,
+    			content: code.content
+    		}
+    	})
     }
 
     updateFile(event){
-    	this.setState({ cur_file: { name: event.target.value } });
+    	var update = JSON.parse(JSON.stringify(this.state.cur_file));
+    	update.name = event.target.value;
+    	this.setState({ cur_file: update });
+    	console.log(this.state);
+    }
+
+    updateContent(content){
+    	var update = JSON.parse(JSON.stringify(this.state.cur_file));
+    	update.content = content;
+    	this.setState({ cur_file: update });
     	console.log(this.state);
     }
 
@@ -110,11 +140,33 @@ class FileSystemViewer extends React.Component {
     	this.setState({ mkdir_name: event.target.value });
     }
 
+    updateSelection(event, code){
+    	var selection = Object.assign({}, this.state.cur_selection);
+    	if(event.target.checked){
+    		selection[code._id] = null;
+    		this.setState({ cur_selection: selection });
+    	}
+    	else{
+    		delete selection[code._id];
+    		this.setState({ cur_selection: selection });
+    	}
+    	console.log(this.state);
+    }
+
 	render(){
 		var curDirs;
 		if (this.state.cur_dir.dirs && this.state.cur_dir.dirs.length > 0){
 			curDirs = this.state.cur_dir.dirs.map((name, index)=>{
-				return (<ListGroupItem key={index} onClick={(e)=>this.navigateTo(name)}><i className="fa fa-folder"/> {name}</ListGroupItem>)
+				var codeObject = this.state.cur_dir.children[name];
+				return (
+					<ListGroupItem key={index}>
+							<input 
+								type="checkbox"
+								onChange={(e)=>this.updateSelection.bind(this)(e, codeObject)}
+							/>
+							<span onClick={(e)=>this.navigateTo(name)}><i className="fa fa-folder"/> {name}</span>
+					</ListGroupItem>
+					)
 			})	
 		}
 		else {
@@ -124,11 +176,21 @@ class FileSystemViewer extends React.Component {
 		var curFiles;
 		if (this.state.cur_dir.files && this.state.cur_dir.files.length > 0){
 			curFiles = this.state.cur_dir.files.map((name, index)=>{
-				return (<ListGroupItem key={index}><i className="fa fa-file"/> {name}</ListGroupItem>)
+				var codeObject = this.state.cur_dir.children[name];
+				return (
+					<ListGroupItem key={index} onClick={(e)=>this.selectCode(codeObject)}>
+							<input 
+								type="checkbox" 
+								onChange={(e)=>this.updateSelection.bind(this)(e, codeObject)}
+							/>
+							<i className="fa fa-file"/> {name}
+					</ListGroupItem>
+					)
 			})	
 		}
 		else {
-			curFiles = (<ListGroupItem> - Empty - </ListGroupItem>)
+			curFiles = (this.state.cur_dir.dirs && this.state.cur_dir.dirs.length > 0) ? 
+				null : (<ListGroupItem className="text-center"> - Empty - </ListGroupItem>)
 		}
 
 		return (
@@ -147,13 +209,16 @@ class FileSystemViewer extends React.Component {
 							<ControlLabel>Name</ControlLabel>
 							<FormControl
 								type="text"
-								value={this.state.cur_file_name}
+								value={this.state.cur_file.name}
 								onChange={this.updateFile.bind(this)}>
 							</FormControl>
 						</FormGroup>
 						<FormGroup>
 							<ControlLabel>Content</ControlLabel>
-							<AceEditor></AceEditor>
+							<AceEditor
+								onChange={this.updateContent.bind(this)}
+								value={this.state.cur_file.content}>
+							</AceEditor>
 						</FormGroup>
 						<Button onClick={this.saveFile.bind(this)} bsStyle="primary" block>
 							Save
@@ -164,9 +229,11 @@ class FileSystemViewer extends React.Component {
 					<Panel>
 						<Panel.Heading>
 							<Button onClick={this.refresh.bind(this)}>
-								<i className="fa fa-refresh"/>
+								<i className="fa fa-refresh"/> Directory
 							</Button>
-							Directory
+							<Button className="pull-right" onClick={this.clearAll.bind(this)}>
+								<i className="fa fa-file"/> Create New 
+							</Button>
 						</Panel.Heading>
 						<Panel.Body>
 							<ListGroup>
@@ -179,16 +246,26 @@ class FileSystemViewer extends React.Component {
 								}
 								{curDirs}
 								{curFiles}
-								<ListGroupItem>
-									<FormControl 
-										type="text" 
-										value={this.state.mkdir_name} 
-										onChange={this.updateDirName.bind(this)}>
-									</FormControl>
-								</ListGroupItem>
+
+								{/* create a directory */}
+								<FormGroup>
+								    <InputGroup>
+								      	<InputGroup.Button>
+								        	<Button onClick={this.makeDir.bind(this)} bsStyle="success" block>
+								        		+ <i className="fa fa-folder"/>
+								        	</Button>
+								      	</InputGroup.Button>
+								      	<FormControl 
+								      		type="text"
+								      		value={this.state.mkdir_name}
+								      		onChange={this.updateDirName.bind(this)} 
+								      	/>
+								    </InputGroup>
+								</FormGroup>
 							</ListGroup>
-							<Button onClick={this.makeDir.bind(this)} bsStyle="primary" block>
-								Add Directory
+
+							<Button onClick={this.deleteSelection.bind(this)} bsStyle="danger" block>
+								<i className="fa fa-trash"/> Delete Selected
 							</Button>
 						</Panel.Body>
 					</Panel>
