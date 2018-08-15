@@ -1,14 +1,17 @@
-span.program-status-running {
+div.program-status-running {
 	padding: 0.5em;
 	background: rgb(150, 250, 150);
+	border-bottom: 1px solid rgba(0,0,0,0.25);
 }
-span.program-status-paused {
+div.program-status-paused {
 	padding: 0.5em;
 	background: rgb(250, 150, 150);
+	border-bottom: 1px solid rgba(0,0,0,0.25);
 }
-span.program-status-exited {
+div.program-status-exited {
 	padding: 0.5em;
 	background: rgb(200, 200, 200);
+	border-bottom: 1px solid rgba(0,0,0,0.25);
 }
 
 .program-ctrl-button {

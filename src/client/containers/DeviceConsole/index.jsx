@@ -2,6 +2,8 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {Form, FormControl, ButtonGroup, Button} from 'react-bootstrap';
 
+import ProgramButtonGroup from '../ProgramButtonGroup/';
+
 import styles from './styles.css';
 
 class DeviceConsole extends React.Component{
@@ -80,39 +82,6 @@ class DeviceConsole extends React.Component{
 				procs.push(<option key={instance_id} value={instance_id}>{code_name} {instance_id} ({code[instance_id]})</option>)
 			}
 		}
-		
-		var buttons;
-		if (this.state.instance_id){
-			buttons = (
-				<ButtonGroup bsSize="small">
-					<Button bsStyle="danger"
-						onClick={()=>this.props.ctrl.kill(this.state.instance_id)}>
-						<i className="fa fa-stop"/>
-						Kill
-					</Button>
-					{
-						(this.props.dash.programs[instance_id].status === 'Running' ? 
-							<Button bsStyle="warning"
-								onClick={()=>this.props.ctrl.pause(this.state.instance_id)}>
-								<i className="fa fa-pause"/>
-								Pause
-							</Button>
-							: <Button bsStyle="success"
-								onClick={()=>this.props.ctrl.resume(this.state.instance_id)}>
-								<i className="fa fa-play"/>
-								Resume
-							</Button>)
-
-					}
-					<Button bsStyle="info"
-						onClick={()=>this.props.ctrl.kill(this.state.instance_id)}>
-						<i className="fa fa-exchange"/>
-						Migrate
-					</Button>
-				</ButtonGroup>
-			)
-		}
-		else buttons = null;
 
 		return (
 			<div>
@@ -121,7 +90,7 @@ class DeviceConsole extends React.Component{
 						<option value={""}>Engine {this.props.engine.id}</option>
 						{procs}
 					</FormControl>
-					{buttons}
+					{this.state.instance_id ? <ProgramButtonGroup program={this.props.programs[this.state.instance_id]}/> : null}
 				</Form>
 				<div ref="terminal" className='terminal'>
 					{

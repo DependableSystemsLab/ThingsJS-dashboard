@@ -18,7 +18,7 @@ const DashboardReducer = (state = {
 				programs: Object.assign({}, state.programs),
 				files: state.files
 			};
-			state.programs[action.payload.program.instance_id] = action.payload.program
+			state.programs[action.payload.program.id] = action.payload.program
 			break;
 		case 'filesystem-event':
 			state = {

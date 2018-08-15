@@ -2,6 +2,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {Panel, Form, FormControl, ListGroup, ListGroupItem, ButtonGroup, Button, Row, Col, Table, Image, Badge} from 'react-bootstrap';
 
+import ProgramButtonGroup from '../ProgramButtonGroup/';
 import DeviceGraph from '../DeviceGraph/';
 import DeviceConsole from '../DeviceConsole/';
 
@@ -39,41 +40,14 @@ function DeviceInfo(props){
 							<ListGroupItem key={index} header={code_name}>
 								{
 									Object.keys(code).map((instance_id, j)=>{
-										var middleBtn;
-										if (code[instance_id] === 'Running'){
-											middleBtn = <Button bsStyle="warning"
-															onClick={()=>props.ctrl.pause(instance_id)}>
-															<i className="fa fa-pause"/>
-															Pause
-														</Button>
-										}
-										else {
-											middleBtn = <Button bsStyle="success"
-															onClick={()=>props.ctrl.resume(instance_id)}>
-															<i className="fa fa-play"/>
-															Resume
-														</Button>
-										}
 
 										return (
-											<span key={j}
+											<div key={j}
 												className={('program-status-'+code[instance_id].toLowerCase())}>
 												<strong>{instance_id}</strong>
 												{code[instance_id]}
-												<ButtonGroup bsSize="small" className="pull-right">
-													<Button bsStyle="danger"
-														onClick={()=>props.ctrl.kill(instance_id)}>
-														<i className="fa fa-stop"/>
-														Kill
-													</Button>
-													{middleBtn}
-													<Button bsStyle="info"
-														onClick={()=>props.ctrl.kill(instance_id)}>
-														<i className="fa fa-exchange"/>
-														Migrate
-													</Button>
-												</ButtonGroup>
-											</span>
+												<ProgramButtonGroup program={props.programs[instance_id]}/>
+											</div>
 										)
 									})
 								}
@@ -171,10 +145,10 @@ class DevicePanel extends React.Component {
 			var ctrl = {
 				pause: this.pauseCode.bind(this),
 				resume: this.resumeCode.bind(this),
-				kill: this.resumeCode.bind(this)
+				kill: this.killCode.bind(this)
 			}
 			if (this.state.view_mode === 'info'){
-				panelBody = <DeviceInfo engine={this.state.engine} ctrl={ctrl}/>
+				panelBody = <DeviceInfo engine={this.state.engine} programs={this.props.programs} ctrl={ctrl}/>
 			}
 			else if (this.state.view_mode === 'graph'){
 				panelBody = <DeviceGraph engine={this.state.engine} width={'100%'} height={'180px'}/>
@@ -219,9 +193,9 @@ class DevicePanel extends React.Component {
 					<Form inline>
 						<FormControl onChange={(evt)=>this.selectEngine(evt.target.value)}
 							componentClass="select"
-							value={this.state.engine ? this.state.engine.id : null}
+							value={this.state.engine ? this.state.engine.id : ''}
 							placeholder="Select Engine">
-							<option value={null}>--- Select Engine ---</option>
+							<option value={''}>--- Select Engine ---</option>
 							{
 								Object.keys(this.props.engines).map((key)=>{
 									return <option key={key} value={key}>{key}</option>

@@ -26,6 +26,43 @@ function joinPath(p1, p2){
 	return p1+'/'+p2;
 }
 
+function isEquivalent(a, b){
+	if (a === b) return true
+
+	if (typeof a === typeof b){
+		if (typeof a === 'object'){
+			var aProps = Object.getOwnPropertyNames(a).sort();
+			var bProps = Object.getOwnPropertyNames(b).sort();
+			var eq = true;
+			if (aProps.length === bProps.length){
+				for (var i=0; i < aProps.length; i++){
+					eq = eq && (aProps[i] === bProps[i]) && isEquivalent(a[aProps[i]], b[bProps[i]])
+					if (!eq) break;
+				}
+				return eq;
+			}
+			else return false
+		}
+		else if (typeof a === 'function'){
+			var aProps = Object.keys(a).sort();
+			var bProps = Object.keys(b).sort();
+			var eq = (a.toString() === b.toString());
+			if (aProps.length === bProps.length){
+				for (var i=0; i < aProps.length; i++){
+					eq = eq && (aProps[i] === bProps[i]) && isEquivalent(a[aProps[i]], b[bProps[i]])
+					if (!eq) break;
+				}
+				return eq;
+			}
+			else return false
+		}
+		else if (typeof a === 'number' || typeof a === 'string'){
+			return (a === b)
+		}
+	}
+	else return false
+}
+
 function EventEmitter(){
 	this.__eventHandlers = {};
 }
@@ -345,13 +382,24 @@ CodeEngine.prototype.constructor = CodeEngine;
 
 /** This method is called by the Dashboard object */
 CodeEngine.prototype.update = function(data){
-	var curStatus = this.status;
+	var curState = {
+		status: this.status,
+		meta: this.meta,
+		codes: this.codes
+	};
+	var newState = {
+		status: data.status,
+		meta: data.meta,
+		codes: data.codes
+	}
+
 	this.status = data.status;
 	this.meta = data.meta;
 	this.codes = data.codes;
-	if (curStatus !== data.status) this.emit('status-change', {
-		before: curStatus,
-		now: this.status
+
+	if (!isEquivalent(curState, newState)) this.emit('status-change', {
+		before: curState,
+		now: newState
 	});
 }
 
@@ -499,6 +547,10 @@ Program.prototype.resume = function(){
 }
 Program.prototype.kill = function(){
 	return this.sendCommand('kill')
+}
+
+Program.prototype.migrate = function(engine_id){
+
 }
 
 /** Dashboard */
