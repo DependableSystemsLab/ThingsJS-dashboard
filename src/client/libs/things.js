@@ -197,21 +197,20 @@ FileSystem.prototype.get = function(abs_path){
 	return new Promise(function(resolve, reject){
 		$.ajax(joinPath(self.base_url, abs_path))
 			.done(function(data, status, xhr){
-				if (data.type === 'directory'){
-					// console.log(status, data);
-					var info = Object.keys(data.children)
-						.reduce(function(acc, key){
-							if (data.children[key].type === 'directory') acc.dirs.push(key);
-							else if (data.children[key].type === 'file') acc.files.push(key);
-							return acc
-						}, {
-							dirs: [],
-							files: []
-						});
-					Object.assign(data, info);
-				}
-				else {
-					data.content = data.content || '';
+				console.log(data);
+				
+				var info = Object.keys(data.children)
+					.reduce(function(acc, key){
+						if (data.children[key].type === 'directory') acc.dirs.push(key);
+						else if (data.children[key].type === 'file') acc.files.push(key);
+						return acc
+					}, {
+						dirs: [],
+						files: []
+					});
+				Object.assign(data, info);
+				if (data.type === 'file'){
+					data.content = data.content || '';	
 				}
 				
 				resolve(data || {});
@@ -580,7 +579,7 @@ export function Dashboard(config){
 					self.emit('filesystem-event', self.files);
 				});
 
-		}, 250);
+		}, 100);
 	});
 }
 Dashboard.prototype = new EventEmitter();
