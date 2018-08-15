@@ -6,13 +6,14 @@ const DashboardReducer = (state = {
 	switch (action.type){
 		case 'engine-registry-event':
 			state = {
-				engines: Object.assign({}, state.engines)
+				engines: Object.assign({}, state.engines),
+				files: state.files
 			};
 			state.engines[action.payload.engine.id] = action.payload.engine
 			break;
 		case 'filesystem-event':
 			state = {
-				engines: Object.assign({}, state.engines),
+				engines: state.engines,
 				files: action.payload
 			};
 			break;

@@ -13,7 +13,7 @@ export default class Home extends React.Component {
 			      <DeviceList></DeviceList>
 			    </Col>
 			    <Col xs={12} md={8}>
-			    	<DevicePanel></DevicePanel>
+			    	<DevicePanel dash={this.props.dash}></DevicePanel>
 			    </Col>
 			</Row>
 		)

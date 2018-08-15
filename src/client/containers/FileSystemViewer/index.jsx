@@ -77,12 +77,23 @@ class FileSystemViewer extends React.Component {
                 console.log("file saved", file);
                 // this.cur_code._id = file._id;
                 this.setState({
-                	cur_file: {
-                		_id: file._id
-                	}
+                	cur_file: Object.assign(this.state.cur_file, {
+                		_id: file._id,
+                		name: file.name,
+                		content: file.content
+                	})
                 })
                 this.refresh();
             });
+    }
+    loadFile(file_name) {
+    	this.setState({
+    		cur_file: {
+    			_id: this.state.cur_dir.children[file_name]._id,
+    			name: this.state.cur_dir.children[file_name].name,
+    			content: this.state.cur_dir.children[file_name].content,
+    		}
+    	})
     }
 
 	clearAll() {
@@ -101,8 +112,12 @@ class FileSystemViewer extends React.Component {
         self.cur_code.content = code.content;
     }
 
-    updateFile(event){
-    	this.setState({ cur_file: { name: event.target.value } });
+    updateFileName(event){
+    	this.setState({ cur_file: Object.assign(this.state.cur_file, { name: event.target.value }) });
+    	console.log(this.state);
+    }
+    updateFileContent(content){
+    	this.setState({ cur_file: Object.assign(this.state.cur_file, { content: content }) });
     	console.log(this.state);
     }
 
@@ -124,7 +139,7 @@ class FileSystemViewer extends React.Component {
 		var curFiles;
 		if (this.state.cur_dir.files && this.state.cur_dir.files.length > 0){
 			curFiles = this.state.cur_dir.files.map((name, index)=>{
-				return (<ListGroupItem key={index}><i className="fa fa-file"/> {name}</ListGroupItem>)
+				return (<ListGroupItem key={index} onClick={(e)=>this.loadFile(name)}><i className="fa fa-file"/> {name}</ListGroupItem>)
 			})	
 		}
 		else {
@@ -147,13 +162,13 @@ class FileSystemViewer extends React.Component {
 							<ControlLabel>Name</ControlLabel>
 							<FormControl
 								type="text"
-								value={this.state.cur_file_name}
-								onChange={this.updateFile.bind(this)}>
+								value={this.state.cur_file.name}
+								onChange={this.updateFileName.bind(this)}>
 							</FormControl>
 						</FormGroup>
 						<FormGroup>
 							<ControlLabel>Content</ControlLabel>
-							<AceEditor></AceEditor>
+							<AceEditor value={this.state.cur_file.content} onChange={this.updateFileContent.bind(this)}></AceEditor>
 						</FormGroup>
 						<Button onClick={this.saveFile.bind(this)} bsStyle="primary" block>
 							Save

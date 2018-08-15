@@ -18,16 +18,14 @@ const ICON_MAP = {
 	'raspberry-pi0': IconPi0
 }
 
-class DeviceItem extends React.Component {
-	render(){
-		return (
-			<ListGroupItem className={style.deviceList}>
-				<Image src={ICON_MAP[this.props.engine.meta.device]}/>
-				{this.props.engine.id}
-				<Badge>{this.props.engine.status}</Badge>
-			</ListGroupItem>
-		)
-	}
+function DeviceItem(props) {
+	return (
+		<ListGroupItem className={('device-list-item engine-'+props.engine.status)}>
+			<Image src={ICON_MAP[props.engine.meta.device]} className="engine-icon"/>
+			{props.engine.id}
+			<Badge>{props.engine.status}</Badge>
+		</ListGroupItem>
+	)
 }
 
 class DeviceList extends React.Component {

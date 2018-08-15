@@ -2,6 +2,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {Panel, Form, FormControl, ButtonGroup, Button, Row, Col, Table, Image, Badge} from 'react-bootstrap';
 
+import DeviceGraph from '../DeviceGraph/';
 import DeviceConsole from '../DeviceConsole/';
 
 function DeviceInfo(props){
@@ -36,10 +37,27 @@ function DeviceInfo(props){
 class DevicePanel extends React.Component {
 	constructor(props){
 		super();
+
+		this.$dash = props.dash;
+
 		this.state = {
 			view_mode: 'info',
-			engine: null
+			selected_code: null,
+			engine: null,
+			codes: {}
 		}
+	}
+
+	componentDidMount(){
+		this.$dash.fs.get('/codes/')
+			.then((fsObject)=>{
+
+				console.log(fsObject);
+				this.setState({
+					codes: fsObject.children
+				});
+
+			});
 	}
 
 	setViewMode(mode){
@@ -53,6 +71,17 @@ class DevicePanel extends React.Component {
 			engine: (engine_id ? this.props.engines[engine_id] : null)
 		});
 	}
+	selectCode(code_name){
+		this.setState({
+			selected_code: code_name
+		});
+	}
+	runCode(){
+		this.state.engine.runCode(this.state.selected_code, this.state.codes[this.state.selected_code].content)
+			.then(function(result){
+				console.log('Successfully launched code', result);
+			})
+	}
 
 	render(){
 		var panelBody;
@@ -61,7 +90,7 @@ class DevicePanel extends React.Component {
 				panelBody = <DeviceInfo engine={this.state.engine}/>
 			}
 			else if (this.state.view_mode === 'graph'){
-				panelBody = <p>Graph</p>
+				panelBody = <DeviceGraph engine={this.state.engine} width={'100%'} height={'180px'}/>
 			}
 			else if (this.state.view_mode === 'console'){
 				panelBody = <DeviceConsole lines={this.state.engine.console}/>
@@ -72,6 +101,28 @@ class DevicePanel extends React.Component {
 		}
 		else {
 			panelBody = (<p>No Engine Selected</p>)
+		}
+
+		var panelFooter;
+		if (this.state.engine){
+			panelFooter = (
+				<Form inline>
+					<FormControl onChange={(e)=>this.selectCode(e.target.value)} componentClass="select" placeholder="Select Code">
+						<option value={null}> --- Select Code --- </option>
+						{
+							Object.keys(this.state.codes).map((key, index)=>{
+								return <option key={index} value={key}>{key}</option>
+							})
+						}
+					</FormControl>
+					<Button onClick={(e)=>this.runCode()} bsStyle="success">
+						<i className="fa fa-play"></i> Run
+					</Button>
+				</Form>
+			)
+		}
+		else {
+			panelFooter = null;
 		}
 
 
@@ -98,18 +149,7 @@ class DevicePanel extends React.Component {
 					{panelBody}
 				</Panel.Body>
 				<Panel.Footer>
-					<Form inline>
-						<FormControl componentClass="select" placeholder="Select Engine">
-							{
-								Object.keys(this.props.engines).map((key)=>{
-									return <option key={key} value={key}>{key}</option>
-								})
-							}
-						</FormControl>
-					</Form>
-					<Button bsStyle="success">
-						<i className="fa fa-play"></i> Run
-					</Button>
+					{panelFooter}
 				</Panel.Footer>
 			</Panel>
 		)
@@ -118,7 +158,8 @@ class DevicePanel extends React.Component {
 
 const mapStateToProps = (state)=>{
 	return {
-		engines: state.dashboard.engines
+		engines: state.dashboard.engines,
+		files: state.dashboard.files
 	}
 }
 const mapDispatchToProps = (dispatch)=>{

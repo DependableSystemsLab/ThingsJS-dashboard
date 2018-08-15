@@ -197,17 +197,22 @@ FileSystem.prototype.get = function(abs_path){
 	return new Promise(function(resolve, reject){
 		$.ajax(joinPath(self.base_url, abs_path))
 			.done(function(data, status, xhr){
-				// console.log(status, data);
-				var info = Object.keys(data.children)
-					.reduce(function(acc, key){
-						if (data.children[key].type === 'directory') acc.dirs.push(key);
-						else if (data.children[key].type === 'file') acc.files.push(key);
-						return acc
-					}, {
-						dirs: [],
-						files: []
-					});
-				Object.assign(data, info);
+				if (data.type === 'directory'){
+					// console.log(status, data);
+					var info = Object.keys(data.children)
+						.reduce(function(acc, key){
+							if (data.children[key].type === 'directory') acc.dirs.push(key);
+							else if (data.children[key].type === 'file') acc.files.push(key);
+							return acc
+						}, {
+							dirs: [],
+							files: []
+						});
+					Object.assign(data, info);
+				}
+				else {
+					data.content = data.content || '';
+				}
 				
 				resolve(data || {});
 			})
@@ -321,13 +326,15 @@ function CodeEngine(pubsub, id, meta){
 	this.pubsub.subscribe(this.id+'/resource', function(topic, message){
 		if (self.stats.length >= 100) self.stats.shift();
 		self.stats.push(message);
-		self.emit('update');
+		self.emit('resource-report', message);
+		// self.emit('update');
 	});
 	this.pubsub.subscribe(this.id+'/console', function(topic, message){
 		message.forEach(function(line){
 			self.console.push(line);
 		});
-		self.emit('update');
+		self.emit('console-data', message);
+		// self.emit('update');
 	})
 	console.log('Engine '+id+' connected');
 
@@ -336,6 +343,18 @@ function CodeEngine(pubsub, id, meta){
 }
 CodeEngine.prototype = new EventEmitter();
 CodeEngine.prototype.constructor = CodeEngine;
+
+/** This method is called by the Dashboard object */
+CodeEngine.prototype.update = function(data){
+	var curStatus = this.status;
+	this.status = data.status;
+	this.meta = data.meta;
+	this.codes = data.codes;
+	if (curStatus !== data.status) this.emit('status-change', {
+		before: curStatus,
+		now: this.status
+	});
+}
 
 CodeEngine.prototype.sendCommand = function(ctrl, kwargs){
 	var self = this;
@@ -504,18 +523,27 @@ export function Dashboard(config){
 		console.log(topic, message);
 		if (!(message.id in self.engines)){
 			self.engines[message.id] = new CodeEngine(pubsub, message.id, message.meta);
-			self.engines[message.id].on('update', function(){
-				self.emit('update', self.engines[message.id]);
+			self.engines[message.id].on('status-change', function(){
+				// self.emit('update', self.engines[message.id]);
+				self.emit('engine-registry-event', self.engines[message.id]);
 			});
+
 		}
+		// else {
+		// 	// Calling engine.update will cause it to emit the "status-change" event this dashboard is listening to
+		// 	self.engines[message.id].update(message);
+		// }
+		
+		// Calling engine.update will cause it to emit the "status-change" event this dashboard is listening to
+		self.engines[message.id].update(message);
 
-		self.engines[message.id].status = message.status;
-		self.engines[message.id].meta = message.meta;
-		self.engines[message.id].codes = message.codes;
-		console.log(self.engines);
-		self.emit('update', self.engines[message.id]);
+		// self.engines[message.id].status = message.status;
+		// self.engines[message.id].meta = message.meta;
+		// self.engines[message.id].codes = message.codes;
+		// console.log(self.engines);
+		// self.emit('update', self.engines[message.id]);
 
-		self.emit('engine-registry-event', self.engines[message.id]);
+		// self.emit('engine-registry-event', self.engines[message.id]);
 	});
 
 	pubsub.subscribe(this.config.topic_program_monitor, function(topic, message){
