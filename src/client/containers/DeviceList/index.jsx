@@ -1,6 +1,6 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import {Image, ListGroup, ListGroupItem, Badge} from 'react-bootstrap';
+import {Image, ListGroup, ListGroupItem, Badge, OverlayTrigger, Popover} from 'react-bootstrap';
 
 import style from './style.css';
 
@@ -20,21 +20,28 @@ const ICON_MAP = {
 
 function DeviceItem(props) {
 	return (
-		<ListGroupItem className={('device-list-item engine-'+props.engine.status)}>
-			<Image src={ICON_MAP[props.engine.meta.device]} className="engine-icon"/>
-			{props.engine.id}
-			<Badge>{props.engine.status}</Badge>
-		</ListGroupItem>
+		<OverlayTrigger trigger="click" overlay={props.menuFunc(props)} rootClose>
+			<ListGroupItem className={('device-list-item engine-'+props.engine.status)}>
+				<Image src={ICON_MAP[props.engine.meta.device]} className="engine-icon"/>
+				{props.engine.id}
+				<Badge>{props.engine.status}</Badge>
+			</ListGroupItem>
+		</OverlayTrigger>
 	)
 }
+
+const DISPLAY_ORDER = ['idle', 'busy', 'dead'];
 
 class DeviceList extends React.Component {
 	render(){
 		var devices;
 		if (Object.keys(this.props.engines).length > 0){
-			devices = Object.keys(this.props.engines).map((key)=>{
-				return <DeviceItem key={key} engine={this.props.engines[key]}/>
-			})
+			devices = Object.values(this.props.engines)
+				.sort((a, b)=>( ( DISPLAY_ORDER.indexOf(a.status) - DISPLAY_ORDER.indexOf(b.status) )
+								|| (a.id < b.id ? -1 : (a.id > b.id ? 1 : 0)) ) )	// Lambda compareFunction (first order by status then by id)
+				.map((engine)=>{
+					return <DeviceItem key={engine.id} engine={engine} menuFunc={this.props.menuFunc}/>
+				})
 		}
 		else {
 			devices = (<ListGroupItem>No Device</ListGroupItem>)

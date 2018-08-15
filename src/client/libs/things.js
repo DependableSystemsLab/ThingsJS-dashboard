@@ -62,7 +62,7 @@ EventEmitter.prototype.once = function(eventName, callback){
 	return handler_id;
 }
 EventEmitter.prototype.removeHandler = function(eventName, handler_id){
-	delete this.__eventHandlers[eventName][handler_id];
+	return (handler_id in this.__eventHandlers[eventName]) && (delete this.__eventHandlers[eventName][handler_id]);
 }
 
 /* MqttWsClient */
@@ -437,14 +437,16 @@ function Program(pubsub, code_name, instance_id, source){
 	this.pubsub.subscribe(this.code_name+'/'+this.id+'/resource', function(topic, message){
 		if (self.stats.length >= 100) self.stats.shift();
 		self.stats.push(message);
-		self.emit('update');
+		// self.emit('update');
+		self.emit('resource-report', message);
 		// console.log(message);
 	});
 	this.pubsub.subscribe(this.code_name+'/'+this.id+'/console', function(topic, message){
 		message.forEach(function(line){
 			self.console.push(line);
 		});
-		self.emit('update');
+		// self.emit('update');
+		self.emit('console-data', message);
 		// console.log(message);
 	});
 	this.pubsub.subscribe(this.code_name+'/'+this.id+'/snapshots', function(topic, message){
@@ -455,6 +457,19 @@ function Program(pubsub, code_name, instance_id, source){
 }
 Program.prototype = new EventEmitter();
 Program.prototype.constructor = Program;
+
+/** This method is called by the Dashboard object */
+Program.prototype.update = function(data){
+	var curStatus = this.status;
+	this.engine = data.engine;
+	this.status = data.status;
+	this.meta = data.meta;
+	if (data.source) this.source = data.source;
+	if (curStatus !== data.status) this.emit('status-change', {
+		before: curStatus,
+		now: this.status
+	});
+}
 
 Program.prototype.sendCommand = function(ctrl, kwargs){
 	var self = this;
@@ -476,11 +491,14 @@ Program.prototype.sendCommand = function(ctrl, kwargs){
 	console.log(self._requests);
 	return deferred.promise
 }
-Program.prototype.pause = function(code_name, instance_id){
+Program.prototype.pause = function(){
 	return this.sendCommand('pause')
 }
-Program.prototype.resume = function(code_name, instance_id){
+Program.prototype.resume = function(){
 	return this.sendCommand('resume')
+}
+Program.prototype.kill = function(){
+	return this.sendCommand('kill')
 }
 
 /** Dashboard */
@@ -549,16 +567,18 @@ export function Dashboard(config){
 		console.log(topic, message);
 		if (!(message.instance_id in self.programs)){
 			var program = new Program(pubsub, message.code_name, message.instance_id, message.source);
-			program.on('update', function(){
-				self.emit('update');
+			program.on('status-change', function(){
+				// self.emit('update');
+				self.emit('program-monitor-event', program);
 			})
 			self.programs[message.instance_id] = program;
 		}
+		self.programs[message.instance_id].update(message);
 		// self.programs[message.instance_id].engine = message.engine;
-		self.programs[message.instance_id].status = message.status;
-		self.programs[message.instance_id].meta = message.meta;
-		if (message.source) self.programs[message.instance_id].source = message.source;
-		self.emit('update');
+		// self.programs[message.instance_id].status = message.status;
+		// self.programs[message.instance_id].meta = message.meta;
+		// if (message.source) self.programs[message.instance_id].source = message.source;
+		// self.emit('update');
 	});
 
 	pubsub.subscribe('scheduler/events', function(topic, message){
@@ -615,6 +635,13 @@ Dashboard.prototype.connectReduxStore = function(redux_store){
 		redux_store.dispatch({
 			type: 'engine-registry-event',
 			payload: { engine: data }
+		})
+	});
+
+	this.on('program-monitor-event', function(data){
+		redux_store.dispatch({
+			type: 'program-monitor-event',
+			payload: { program: data }
 		})
 	});
 
