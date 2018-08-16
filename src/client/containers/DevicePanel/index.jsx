@@ -1,6 +1,6 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import {Panel, Form, FormControl, ListGroup, ListGroupItem, ButtonGroup, Button, Row, Col, Table, Image, Badge} from 'react-bootstrap';
+import {Panel, Form, FormControl, ListGroup, ListGroupItem, ButtonGroup, Button, OverlayTrigger, Tooltip, Row, Col, Table, Image, Badge} from 'react-bootstrap';
 
 import ProgramButtonGroup from '../ProgramButtonGroup/';
 import DeviceGraph from '../DeviceGraph/';
@@ -37,13 +37,20 @@ function DeviceInfo(props){
 					Object.keys(props.engine.codes).map((code_name, index)=>{
 						var code = props.engine.codes[code_name];
 						return (
-							<ListGroupItem key={index} header={code_name}>
+							<div key={index} className="list-group-item">
+								<h4>{code_name}</h4>
 								{
 									Object.keys(code).map((instance_id, j)=>{
 
 										return (
 											<div key={j}
 												className={('program-status-'+code[instance_id].toLowerCase())}>
+												<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-program-console">Show Console</Tooltip>}>
+													<Button bsStyle="default" bsSize="small"
+													 	onClick={(e)=>props.panel.setViewMode('console', { selected_program: instance_id })}>
+														<i className="fa fa-eye"/>
+													</Button>
+												</OverlayTrigger>
 												<strong>{instance_id}</strong>
 												{code[instance_id]}
 												<ProgramButtonGroup program={props.programs[instance_id]}/>
@@ -51,7 +58,7 @@ function DeviceInfo(props){
 										)
 									})
 								}
-							</ListGroupItem>
+							</div>
 						)
 					})
 					}
@@ -71,6 +78,7 @@ class DevicePanel extends React.Component {
 		this.state = {
 			view_mode: 'info',
 			selected_code: null,
+			selected_program: null,
 			engine: null,
 			codes: {}
 		}
@@ -83,7 +91,7 @@ class DevicePanel extends React.Component {
 		this.$dash.fs.get('/codes/')
 			.then((fsObject)=>{
 
-				console.log(fsObject);
+				// console.log(fsObject);
 				this.setState({
 					codes: fsObject.children
 				});
@@ -107,10 +115,10 @@ class DevicePanel extends React.Component {
 		}
 	}
 
-	setViewMode(mode){
-		this.setState({
-			view_mode: mode
-		});
+	setViewMode(mode, other_data){
+		this.setState(Object.assign({
+			view_mode: mode,
+		}, other_data));
 	}
 
 	selectEngine(engine_id){
@@ -148,13 +156,13 @@ class DevicePanel extends React.Component {
 				kill: this.killCode.bind(this)
 			}
 			if (this.state.view_mode === 'info'){
-				panelBody = <DeviceInfo engine={this.state.engine} programs={this.props.programs} ctrl={ctrl}/>
+				panelBody = <DeviceInfo engine={this.state.engine} programs={this.props.programs} panel={this}/>
 			}
 			else if (this.state.view_mode === 'graph'){
 				panelBody = <DeviceGraph engine={this.state.engine} width={'100%'} height={'180px'}/>
 			}
 			else if (this.state.view_mode === 'console'){
-				panelBody = <DeviceConsole engine={this.state.engine} ctrl={ctrl} dash={this.$dash}/>
+				panelBody = <DeviceConsole engine={this.state.engine} instance_id={this.state.selected_program} ctrl={ctrl} dash={this.$dash}/>
 			}
 			else {
 				panelBody = <p>Unknown Mode</p>

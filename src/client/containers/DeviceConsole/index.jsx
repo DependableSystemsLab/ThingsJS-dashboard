@@ -11,18 +11,34 @@ class DeviceConsole extends React.Component{
 		super();
 
 		this.state = {
-			instance_id: '',
-			lines: props.engine.console.slice()
+			instance_id: props.instance_id || ''
+		}
+		if (props.instance_id){
+			this.state.lines = props.dash.programs[props.instance_id].console.slice()
+		}
+		else {
+			this.state.lines = props.engine.console.slice()
 		}
 	}
 
 	__setup(){
-		this.handlerID = this.props.engine.on('console-data', (lines)=>{
-			// console.log("New Lines from Engine", lines);
-			this.setState({
-				lines: this.state.lines.concat(lines)	
+		if (this.state.instance_id){
+			var program = this.props.dash.programs[this.state.instance_id];
+			this.handlerID = program.on('console-data', (lines)=>{
+				// console.log("New Lines from Program", lines);
+				this.setState({
+					lines: this.state.lines.concat(lines)
+				})
 			})
-		})
+		}
+		else {
+			this.handlerID = this.props.engine.on('console-data', (lines)=>{
+				// console.log("New Lines from Engine", lines);
+				this.setState({
+					lines: this.state.lines.concat(lines)	
+				})
+			})
+		}
 	}
 	__cleanUp(){
 		if (this.state.instance_id){
@@ -41,37 +57,53 @@ class DeviceConsole extends React.Component{
 		this.__cleanUp()
 	}
 
-	componentDidUpdate(){
+	componentDidUpdate(prevProps){
 		this.refs.terminal.scrollTop = this.refs.terminal.scrollHeight;
 	}
 
 
 	selectConsole(instance_id){
 		console.log(instance_id);
-		
+
 		this.__cleanUp();
 
-		if (!instance_id){
-			this.__setup();
-			this.setState({
-				instance_id: '',
-				lines: this.props.engine.console.slice()
-			});
+		var lines;
+		if (instance_id){
+			lines = this.props.dash.programs[instance_id].console.slice()
 		}
 		else {
-			var program = this.props.dash.programs[instance_id];
-			this.handlerID = program.on('console-data', (lines)=>{
-				// console.log("New Lines from Program", lines);
-				this.setState({
-					lines: this.state.lines.concat(lines)
-				})
-			})
-
-			this.setState({
-				instance_id: instance_id,
-				lines: program.console.slice()
-			})
+			lines = this.props.engine.console.slice()
 		}
+
+		this.setState({
+			instance_id: instance_id || '',
+			lines: lines
+		});
+		this.__setup();
+		
+		
+
+		// if (!instance_id){
+		// 	this.__setup();
+		// 	this.setState({
+		// 		instance_id: '',
+		// 		lines: this.props.engine.console.slice()
+		// 	});
+		// }
+		// else {
+		// 	// var program = this.props.dash.programs[instance_id];
+		// 	// this.handlerID = program.on('console-data', (lines)=>{
+		// 	// 	// console.log("New Lines from Program", lines);
+		// 	// 	this.setState({
+		// 	// 		lines: this.state.lines.concat(lines)
+		// 	// 	})
+		// 	// })
+		// 	this.__setup();
+		// 	this.setState({
+		// 		instance_id: instance_id,
+		// 		lines: program.console.slice()
+		// 	})
+		// }
 	}
 
 	render(){
@@ -86,7 +118,7 @@ class DeviceConsole extends React.Component{
 		return (
 			<div>
 				<Form inline>
-					<FormControl onChange={(e)=>this.selectConsole(e.target.value)} componentClass="select" placeholder="Select Console">
+					<FormControl value={this.state.instance_id} onChange={(e)=>this.selectConsole(e.target.value)} componentClass="select" placeholder="Select Console">
 						<option value={""}>Engine {this.props.engine.id}</option>
 						{procs}
 					</FormControl>

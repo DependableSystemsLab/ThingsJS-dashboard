@@ -380,6 +380,19 @@ function CodeEngine(pubsub, id, meta){
 CodeEngine.prototype = new EventEmitter();
 CodeEngine.prototype.constructor = CodeEngine;
 
+CodeEngine.prototype.getProcesses = function(){
+	return Object.keys(this.codes).reduce((list, name)=>{
+		Object.keys(this.codes[name]).forEach((instance_id)=>{
+			list.push({
+				code_name: name,
+				instance_id: instance_id,
+				status: this.codes[name][instance_id]
+			})
+		})
+		return list;
+	}, []);
+}
+
 /** This method is called by the Dashboard object */
 CodeEngine.prototype.update = function(data){
 	var curState = {
@@ -462,6 +475,7 @@ function Program(pubsub, code_name, instance_id, source){
 	this.id = instance_id;
 	this.source = source;
 	this.status = undefined;
+	this.engine = undefined;
 	this.meta = {};
 
 	this.stats = [];
@@ -507,9 +521,9 @@ Program.prototype = new EventEmitter();
 Program.prototype.constructor = Program;
 
 /** This method is called by the Dashboard object */
-Program.prototype.update = function(data){
+Program.prototype.update = function(data, dashboard){
 	var curStatus = this.status;
-	this.engine = data.engine;
+	this.engine = data.engine ? dashboard.engines[data.engine] : this.engine;
 	this.status = data.status;
 	this.meta = data.meta;
 	if (data.source) this.source = data.source;
@@ -550,7 +564,11 @@ Program.prototype.kill = function(){
 }
 
 Program.prototype.migrate = function(engine_id){
-
+	if (this.engine){
+		if (engine_id) return this.engine.migrateCode(this.code_name, this.id, engine_id);
+		else return Promise.reject('No Target Engine provided for migration');
+	}
+	else return Promise.reject('No reference to Engine object to perform migration');
 }
 
 /** Dashboard */
@@ -625,7 +643,7 @@ export function Dashboard(config){
 			})
 			self.programs[message.instance_id] = program;
 		}
-		self.programs[message.instance_id].update(message);
+		self.programs[message.instance_id].update(message, self);
 		// self.programs[message.instance_id].engine = message.engine;
 		// self.programs[message.instance_id].status = message.status;
 		// self.programs[message.instance_id].meta = message.meta;

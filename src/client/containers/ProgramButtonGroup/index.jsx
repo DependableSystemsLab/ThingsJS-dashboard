@@ -55,13 +55,19 @@ class ProgramButtonGroup extends React.Component {
 								<option value={''}>--- Select Engine ---</option>
 								{
 									Object.keys(this.props.engines).map((key)=>{
-										return <option key={key} value={key}>{key}</option>
+										if (this.props.program.engine.id !== key)
+											return <option key={key} value={key}>{key}</option>
+										return null;
 									})
 								}
 							</FormControl>
-							<Button bsStyle="primary" onClick={(e)=>this.props.program.migrate(this.state.engine_id)}>
-								<i className="fa fa-check"/> OK
-							</Button>
+							{
+								this.state.engine_id ?
+									<Button bsStyle="primary" onClick={(e)=>this.props.program.migrate(this.state.engine_id)}>
+										<i className="fa fa-check"/> OK
+									</Button>
+									: null
+							}
 						</Dropdown.Menu>
 					</Dropdown>
 				</OverlayTrigger>

@@ -1,0 +1,13 @@
+.graph-legend-item.list-group-item {
+	cursor: pointer;
+	padding: 4px 12px;
+	font-size: 0.9em;
+}
+.graph-legend-item.list-group-item:hover {
+	border: 1px solid rgb(0,0,0,0.5);
+}
+.graph-legend-item-bar {
+	display: inline-block;
+	width: 24px;
+	height: 8px;
+}
