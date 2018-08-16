@@ -8,6 +8,8 @@ import DeviceConsole from '../DeviceConsole/';
 
 import style from './style.css';
 
+const DISPLAY_ORDER = ['Running', 'Paused', 'Exited'];
+
 function DeviceInfo(props){
 	return (
 		<Row>
@@ -40,7 +42,10 @@ function DeviceInfo(props){
 							<div key={index} className="list-group-item">
 								<h4>{code_name}</h4>
 								{
-									Object.keys(code).map((instance_id, j)=>{
+									Object.keys(code)
+										.sort((a, b)=>( ( DISPLAY_ORDER.indexOf(code[a]) - DISPLAY_ORDER.indexOf(code[b]) )
+														|| (a < b ? -1 : (a > b ? 1 : 0)) ) )	// Lambda compareFunction (first order by status then by id)
+										.map((instance_id, j)=>{
 
 										return (
 											<div key={j}

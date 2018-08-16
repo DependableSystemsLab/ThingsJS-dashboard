@@ -300,8 +300,7 @@ class DeviceGraph extends React.Component {
 		return (
 			<Row>
 				<Col xs={12} md={9}>
-					<div ref="graph">
-					</div>
+					<div ref="graph"></div>
 				</Col>
 				<Col xs={12} md={3}>
 					<ButtonGroup>

@@ -19,12 +19,14 @@ const ICON_MAP = {
 }
 
 function DeviceItem(props) {
+	var procs = props.engine.getProcesses().filter((proc)=>proc.status!=='Exited');
+	var active = procs.filter((proc)=>proc.status==='Running').length;
 	return (
 		<OverlayTrigger trigger="click" overlay={props.menuFunc(props)} rootClose>
 			<ListGroupItem className={('device-list-item engine-'+props.engine.status)}>
 				<Image src={ICON_MAP[props.engine.meta.device]} className="engine-icon"/>
 				{props.engine.id}
-				<Badge>{props.engine.status}</Badge>
+				<Badge>{props.engine.status} ({active+'/'+procs.length})</Badge>
 			</ListGroupItem>
 		</OverlayTrigger>
 	)
