@@ -1,14 +1,16 @@
 const DashboardReducer = (state = { 
 		engines: {},
 		programs: {},
-		files: {} 
+		files: {} ,
+		history: []
 	}, action) => {
 	switch (action.type){
 		case 'engine-registry-event':
 			state = {
 				engines: Object.assign({}, state.engines),
 				programs: state.programs,
-				files: state.files
+				files: state.files,
+				history: state.history
 			};
 			state.engines[action.payload.engine.id] = action.payload.engine
 			break;
@@ -16,7 +18,8 @@ const DashboardReducer = (state = {
 			state = {
 				engines: state.engines,
 				programs: Object.assign({}, state.programs),
-				files: state.files
+				files: state.files,
+				history: state.history
 			};
 			state.programs[action.payload.program.id] = action.payload.program
 			break;
@@ -24,7 +27,16 @@ const DashboardReducer = (state = {
 			state = {
 				engines: state.engines,
 				programs: state.programs,
-				files: action.payload
+				files: action.payload,
+				history: state.history
+			};
+			break;
+		case 'system-event':
+			state = {
+				engines: state.engines,
+				programs: state.programs,
+				files: state.files,
+				history: state.history.concat([action.payload.event])
 			};
 			break;
 	}

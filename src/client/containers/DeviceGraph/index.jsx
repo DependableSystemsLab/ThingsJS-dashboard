@@ -30,16 +30,16 @@ class DeviceGraph extends React.Component {
 	}
 
 	__init_d3(){
-		var svg = this.d3.svg = d3.select(this.refs.graph).append('svg')
+		var svg = d3.select(this.refs.graph).append('svg')
 			.attr('width', (this.props.width || '600px') )
 			.attr('height', (this.props.height || '400px') );
-		var elemBox = this.d3.elemBox = svg.node().getBoundingClientRect();
+		var elemBox = svg.node().getBoundingClientRect();
 
-		var margin = this.d3.margin = { left: 50, right: 30, top: 30, bottom: 50 };
-		var size = this.d3.size = { width: elemBox.width - margin.left - margin.right, height: elemBox.height - margin.top - margin.bottom };
+		var margin = { left: 50, right: 30, top: 30, bottom: 50 };
+		var size = { width: elemBox.width - margin.left - margin.right, height: elemBox.height - margin.top - margin.bottom };
 
-		var axes = this.d3.axes = svg.append('g').attr('transform', 'translate('+margin.left+', '+margin.top+')');
-		var x = this.d3.xScale = d3.scaleLinear().range([ 0, size.width ]);
+		var axes = svg.append('g').attr('transform', 'translate('+margin.left+', '+margin.top+')');
+		var x = d3.scaleLinear().range([ 0, size.width ]);
 
 		if (this.engine.stats.length > 0){
 			x.domain([ this.engine.stats[0].timestamp, this.engine.stats[this.engine.stats.length-1].timestamp ]);
@@ -48,14 +48,14 @@ class DeviceGraph extends React.Component {
 			x.domain([ Date.now() - 1000, Date.now() ]);
 		}
 
-		var y = this.d3.yScale = d3.scaleLinear().domain([ 0, 100 ]).range([ size.height, 0 ]);
-		var xAxis = this.d3.xAxis = d3.axisBottom(x).ticks(Math.floor(elemBox.width / 100)).tickFormat(d3.timeFormat('%H:%M:%S.%L'));
-		var yAxis = this.d3.yAxis = d3.axisLeft(y);
+		var y = d3.scaleLinear().domain([ 0, 100 ]).range([ size.height, 0 ]);
+		var xAxis = d3.axisBottom(x).ticks(Math.floor(elemBox.width / 100)).tickFormat(d3.timeFormat('%H:%M:%S.%L'));
+		var yAxis = d3.axisLeft(y);
 
-		var xLine = this.d3.xLine = axes.append('g').attr('transform', 'translate(0, '+size.height+')').call(xAxis);
-		var yLine = this.d3.yLine = axes.append('g').call(yAxis);
+		var xLine = axes.append('g').attr('transform', 'translate(0, '+size.height+')').call(xAxis);
+		var yLine = axes.append('g').call(yAxis);
 
-		var grid = this.d3.grid = svg.append('g').attr('transform', 'translate('+margin.left+', '+margin.top+')');
+		var grid = svg.append('g').attr('transform', 'translate('+margin.left+', '+margin.top+')');
 		
 		var mouseTrack = grid.append('line')
 			.attr('x1', 0)
@@ -67,12 +67,12 @@ class DeviceGraph extends React.Component {
 			.attr('x', 0)
 			.attr('y', 0);
 
-		var mouseCursor = this.d3.cursor = grid.append('line')
+		var mouseCursor = grid.append('line')
 			.attr('x1', 0)
 			.attr('x2', 0)
 			.attr('y1', 0)
 			.attr('y2', size.height);
-		var cursorText = this.d3.cursorText = grid.append('text').attr('x',0).attr('y',0)
+		var cursorText = grid.append('text').attr('x',0).attr('y',0)
 
 		svg.on('mousemove', ()=>{
 				var mousePos = d3.mouse(grid.node());
@@ -92,13 +92,69 @@ class DeviceGraph extends React.Component {
 			});
 
 		// Actual elements that will represent incoming data
-		var graph = this.d3.graph = svg.append('g').attr('transform', 'translate('+margin.left+', '+margin.top+')');
+		var graph = svg.append('g').attr('transform', 'translate('+margin.left+', '+margin.top+')');
 		var realTimeFunc = this.d3.lineFunc = d3.line()
 				.x(function(d, i){ return x(d.timestamp) })
 				.y(function(d, i){ return y(d.value)})
 
-		var colors = this.d3.colors = d3.scaleOrdinal(d3.schemeCategory10);
+		var colors = d3.scaleOrdinal(d3.schemeCategory10);
 
+		this.d3.svg = svg;
+		this.d3.elemBox = elemBox;
+		this.d3.margin = margin;
+		this.d3.size = size;
+		this.d3.view = { from: 0, to: 0 };
+		this.d3.axes = axes;
+		this.d3.xScale = x;
+		this.d3.yScale = y;
+		this.d3.xAxis = xAxis;
+		this.d3.yAxis = yAxis;
+		this.d3.xLine = xLine;
+		this.d3.yLine = yLine;
+		this.d3.grid = grid;
+		this.d3.cursor = mouseCursor;
+		this.d3.cursorText = cursorText;
+
+		this.d3.panLeft = ()=>{
+			var domain = x.domain();
+			var zoom = domain[1] - domain[0];
+			var panStep = zoom * 0.1;
+			this.d3.view.from = domain[0] - panStep;
+			this.d3.view.to = this.d3.view.from + zoom;
+			this.__redraw_d3()
+		}
+		this.d3.panRight = ()=>{
+			var domain = x.domain();
+			var zoom = domain[1] - domain[0];
+			var panStep = zoom * 0.1;
+			this.d3.view.from = domain[0] + panStep;
+			this.d3.view.to = this.d3.view.from + zoom;
+			this.__redraw_d3()
+		}
+		this.d3.zoomIn = ()=>{
+			var domain = x.domain();
+			var zoom = (domain[1] - domain[0]) * 0.8;
+			var panStep = zoom * 0.1;
+			this.d3.view.from = domain[0] + (domain[1] - domain[0] - zoom) / 2;
+			this.d3.view.to = this.d3.view.from + zoom;
+			this.__redraw_d3()
+		}
+		this.d3.zoomOut = ()=>{
+			var domain = x.domain();
+			var zoom = (domain[1] - domain[0]) / 0.8;
+			var panStep = zoom * 0.1;
+			this.d3.view.from = domain[0] - (zoom - domain[1] + domain[0]) / 2;
+			this.d3.view.to = this.d3.view.from + zoom;
+			this.__redraw_d3()
+		}
+		this.d3.resetView = ()=>{
+			this.d3.view.from = 0;
+			this.d3.view.to = 0;
+			this.__redraw_d3()
+		}
+
+		this.d3.graph = graph;
+		this.d3.colors = colors;
 		this.d3.lines = {};
 
 		var procs = this.engine.getProcesses();
@@ -179,7 +235,12 @@ class DeviceGraph extends React.Component {
 		if (this.state.view_mode === 'cpu'){
 			// console.log('Redrawing ', this.state);
 			if (this.state.engine_cpu.length > 0){
-				this.d3.xScale.domain([ this.state.engine_cpu[0].timestamp, this.state.engine_cpu[this.state.engine_cpu.length-1].timestamp ]);
+				if (this.d3.view.from === 0 || this.d3.view.to === 0){
+					this.d3.xScale.domain(d3.extent(this.state.engine_cpu, function(d){ return d.timestamp }));
+				}
+				else {
+					this.d3.xScale.domain([this.d3.view.from, this.d3.view.to]);
+				}
 			}
 			else {
 				this.d3.xScale.domain([ Date.now() - 1000, Date.now() ]);
@@ -201,7 +262,12 @@ class DeviceGraph extends React.Component {
 		}
 		else if (this.state.view_mode === 'memory'){
 			if (this.state.engine_memory.length > 0){
-				this.d3.xScale.domain([ this.state.engine_memory[0].timestamp, this.state.engine_memory[this.state.engine_memory.length-1].timestamp ]);
+				if (this.d3.view.from === 0 || this.d3.view.to === 0){
+					this.d3.xScale.domain(d3.extent(this.state.engine_memory, function(d){ return d.timestamp }));
+				}
+				else {
+					this.d3.xScale.domain([this.d3.view.from, this.d3.view.to]);
+				}
 			}
 			else {
 				this.d3.xScale.domain([ Date.now() - 1000, Date.now() ]);
@@ -301,6 +367,25 @@ class DeviceGraph extends React.Component {
 			<Row>
 				<Col xs={12} md={9}>
 					<div ref="graph"></div>
+					<div className="text-center">
+						<ButtonGroup>
+							<Button onClick={(evt)=>this.d3.panLeft(this)}>
+								<i className="fa fa-chevron-left"/>
+							</Button>
+							<Button onClick={(evt)=>this.d3.zoomOut(this)}>
+								<i className="fa fa-search-minus"/>
+							</Button>
+							<Button onClick={(evt)=>this.d3.resetView(this)}>
+								<i className="fa fa-refresh"/>
+							</Button>
+							<Button onClick={(evt)=>this.d3.zoomIn(this)}>
+								<i className="fa fa-search-plus"/>
+							</Button>
+							<Button onClick={(evt)=>this.d3.panRight(this)}>
+								<i className="fa fa-chevron-right"/>
+							</Button>
+						</ButtonGroup>
+					</div>
 				</Col>
 				<Col xs={12} md={3}>
 					<ButtonGroup>

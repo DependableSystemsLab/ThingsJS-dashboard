@@ -722,6 +722,13 @@ Dashboard.prototype.connectReduxStore = function(redux_store){
 		})
 	});
 
+	this.on('system-event', function(event_data){
+		redux_store.dispatch({
+			type: 'system-event',
+			payload: { event: event_data }
+		})
+	});
+
 };
 
 // export default {
