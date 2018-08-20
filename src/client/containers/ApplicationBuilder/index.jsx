@@ -5,6 +5,8 @@ import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormCo
 
 import AceEditor from 'react-ace';
 
+import styles from './styles.css';
+
 class ApplicationBuilder extends React.Component {
 	constructor(props){
 		super();
