@@ -1,18 +1,28 @@
 import React from 'react';
-import {NavLink, Prompt} from 'react-router-dom';
+import {Route, Link, NavLink, Prompt} from 'react-router-dom';
 import {Image, Navbar, Nav, NavItem, NavDropdown, MenuItem, Grid, Row, Col} from 'react-bootstrap';
 
 import EceLogo from '../assets/logo/ecelogo.png';
 
+function NavListItem (props){
+	return (
+		<Route path={props.to} exact={props.exact} children={(route)=>(
+			<li className={route.match ? props.activeClassName : ''}>
+		  	  <Link to={props.to}>{props.children}</Link>
+		  	</li>
+		)}/>
+	)
+}
+
 export default class Base extends React.Component {
-	constructor(props){
+	constructor(props, context){
 		super()
-		console.log(this.context);
+		console.log('Base Component Created', context);
 	}
 	render(){
 		return (
 			<div>
-				<Navbar inverse staticTop collapseOnSelect>
+				<Navbar fluid inverse staticTop collapseOnSelect>
 				  <Navbar.Header>
 				    <Navbar.Brand>
 				      <a href="/#/">
@@ -39,20 +49,21 @@ export default class Base extends React.Component {
 				<Grid fluid>
 					<Row>
 						<Col xs={12} sm={3} md={2}>
-					  	  <Nav bsStyle="pills" stacked activeHref="/#/" onSelect={()=>{}}>
-						    <NavItem eventKey={1} href="/#/">
-						      Home
-						    </NavItem>
-						    <NavItem eventKey={2} href="/#/schedule" title="Schedule">
-						      Schedule
-						    </NavItem>
-						    <NavItem eventKey={3} href="/#/applications" title="Applications">
-						      Applications
-						    </NavItem>
-						    <NavItem eventKey={4} href="/#/files" title="Files">
-						      Files
-						    </NavItem>
-						  </Nav>
+						  <ul className="nav nav-pills nav-stacked">
+						  	<NavListItem to="/" activeClassName="active" exact>
+							  Home
+							</NavListItem>
+						  	<NavListItem to="/schedule" activeClassName="active">
+							  Schedule
+							</NavListItem>
+							<NavListItem to="/applications" activeClassName="active">
+							  Applications
+							</NavListItem>
+							<NavListItem to="/files" activeClassName="active">
+							  Files
+							</NavListItem>
+						  </ul>
+
 					  	</Col>
 					  	<Col xs={12} sm={9} md={10}>
 					  	  {this.props.children}

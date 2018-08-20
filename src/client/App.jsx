@@ -20,14 +20,14 @@ class App extends Component{
 
   render(){
     return(
-    	<Router history={browserHistory} basename='/'>
-    		<Base>
-    			<Route path='/' exact render={()=><Home></Home>}/>
-                <Route path='/files' render={()=><Files dash={this.dash}></Files>}/>
-    			<Route path='/applications' render={()=><Applications dash={this.dash}></Applications>}/>
-                <Route path='/schedule' render={()=><Schedule></Schedule>}/>
-    		</Base>
-    	</Router>
+      <Router history={browserHistory} basename='/'>
+        <Base>
+          <Route path='/' exact render={()=><Home dash={this.dash}></Home>}/>
+          <Route path='/files' render={()=><Files dash={this.dash}></Files>}/>
+          <Route path='/applications' render={()=><Applications dash={this.dash}></Applications>}/>
+          <Route path='/schedule' render={()=><Schedule dash={this.dash}></Schedule>}/>
+        </Base>
+      </Router>
     );
   }
 }

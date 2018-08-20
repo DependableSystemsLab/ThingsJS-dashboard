@@ -1,0 +1,23 @@
+div.program-status-running {
+	padding: 0.5em;
+	background: rgb(150, 250, 150);
+	border-bottom: 1px solid rgba(0,0,0,0.25);
+}
+div.program-status-paused {
+	padding: 0.5em;
+	background: rgb(250, 150, 150);
+	border-bottom: 1px solid rgba(0,0,0,0.25);
+}
+div.program-status-exited {
+	padding: 0.5em;
+	background: rgb(200, 200, 200);
+	border-bottom: 1px solid rgba(0,0,0,0.25);
+}
+
+.program-ctrl-button {
+	padding: 0.3em;
+	cursor: pointer;
+	color: rgb(0,0,0);
+	background: rgb(240, 240, 240);
+	border: 1px solid rgba(255,255,255,0.3);
+}

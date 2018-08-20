@@ -15,7 +15,7 @@ class FileSystemViewer extends React.Component {
 		this.state = {
 			cur_path: '/',
 			cur_path_tokens: [],
-			cur_dir: props.root,
+			cur_dir: {},
 			cur_file: {
 	            name: '',
 	            content: ''
@@ -26,10 +26,14 @@ class FileSystemViewer extends React.Component {
 
 	}
 
+	componentDidMount() {
+		this.refresh();
+	}
+
 	refresh(){
         this.$dash.fs.get(this.state.cur_path)
             .then((fsObject)=>{
-                console.log(fsObject);
+                console.log('FSViewer Refreshed', fsObject);
                 this.setState({
                 	cur_dir: fsObject,
                 	cur_path_tokens: this.state.cur_path.split('/').slice(1)
@@ -84,8 +88,26 @@ class FileSystemViewer extends React.Component {
         this.$dash.fs.writeFile(this.state.cur_path, this.state.cur_file)
             .then((file)=>{
                 console.log("file saved", file);
+                // this.cur_code._id = file._id;
+                this.setState({
+                	cur_file: Object.assign(this.state.cur_file, {
+                		_id: file._id,
+                		name: file.name,
+                		content: file.content
+                	})
+                })
                 this.refresh();
             });
+    }
+
+    loadFile(file){
+    	this.setState({
+    		cur_file: {
+    			_id: file._id,
+    			name: file.name,
+    			content: file.content
+    		}
+    	})
     }
 
     deleteSelection(){
@@ -105,28 +127,14 @@ class FileSystemViewer extends React.Component {
 			cur_selection: {}
 		})
     }
-
-    selectCode(code){
-    	this.setState({
-    		cur_file: {
-    			_id: code._id,
-    			name: code.name,
-    			content: code.content
-    		}
-    	})
-    }
-
-    updateFile(event){
-    	var update = JSON.parse(JSON.stringify(this.state.cur_file));
-    	update.name = event.target.value;
-    	this.setState({ cur_file: update });
+	
+	updateFileName(event){
+    	this.setState({ cur_file: Object.assign(this.state.cur_file, { name: event.target.value }) });
     	console.log(this.state);
     }
 
-    updateContent(content){
-    	var update = JSON.parse(JSON.stringify(this.state.cur_file));
-    	update.content = content;
-    	this.setState({ cur_file: update });
+    updateFileContent(content){
+    	this.setState({ cur_file: Object.assign(this.state.cur_file, { content: content }) });
     	console.log(this.state);
     }
 
@@ -134,14 +142,14 @@ class FileSystemViewer extends React.Component {
     	this.setState({ mkdir_name: event.target.value });
     }
 
-    updateSelection(event, code){
+    updateSelection(event, fsObject){
     	var selection = Object.assign({}, this.state.cur_selection);
     	if(event.target.checked){
-    		selection[code._id] = null;
+    		selection[fsObject._id] = null;
     		this.setState({ cur_selection: selection });
     	}
     	else{
-    		delete selection[code._id];
+    		delete selection[fsObject._id];
     		this.setState({ cur_selection: selection });
     	}
     	console.log(this.state);
@@ -151,14 +159,14 @@ class FileSystemViewer extends React.Component {
 		var curDirs;
 		if (this.state.cur_dir.dirs && this.state.cur_dir.dirs.length > 0){
 			curDirs = this.state.cur_dir.dirs.map((name, index)=>{
-				var codeObject = this.state.cur_dir.children[name];
+				var fsObject = this.state.cur_dir.children[name];
 				return (
-					<ListGroupItem key={index}>
+					<ListGroupItem key={index} onClick={(e)=>this.navigateTo(name)}>
 							<input 
 								type="checkbox"
-								onChange={(e)=>this.updateSelection.bind(this)(e, codeObject)}
+								onChange={(e)=>this.updateSelection(e, fsObject)}
 							/>
-							<span onClick={(e)=>this.navigateTo(name)}><i className="fa fa-folder"/> {name}</span>
+							<i className="fa fa-folder"/> {name}
 					</ListGroupItem>
 					)
 			})	
@@ -170,12 +178,12 @@ class FileSystemViewer extends React.Component {
 		var curFiles;
 		if (this.state.cur_dir.files && this.state.cur_dir.files.length > 0){
 			curFiles = this.state.cur_dir.files.map((name, index)=>{
-				var codeObject = this.state.cur_dir.children[name];
+				var file = this.state.cur_dir.children[name];
 				return (
-					<ListGroupItem key={index} onClick={(e)=>this.selectCode(codeObject)}>
+					<ListGroupItem key={index} onClick={(e)=>this.loadFile(file)}>
 							<input 
 								type="checkbox" 
-								onChange={(e)=>this.updateSelection.bind(this)(e, codeObject)}
+								onChange={(e)=>this.updateSelection(e, file)}
 							/>
 							<i className="fa fa-file"/> {name}
 					</ListGroupItem>
@@ -204,15 +212,14 @@ class FileSystemViewer extends React.Component {
 							<FormControl
 								type="text"
 								value={this.state.cur_file.name}
-								onChange={this.updateFile.bind(this)}>
+								onChange={this.updateFileName.bind(this)}>
 							</FormControl>
 						</FormGroup>
 						<FormGroup>
 							<ControlLabel>Content</ControlLabel>
-							<AceEditor
-								onChange={this.updateContent.bind(this)}
-								value={this.state.cur_file.content}>
-							</AceEditor>
+							<AceEditor 
+							 	onChange={this.updateFileContent.bind(this)}
+								value={this.state.cur_file.content}></AceEditor>
 						</FormGroup>
 						<Button onClick={this.saveFile.bind(this)} bsStyle="primary" block>
 							Save
@@ -269,15 +276,17 @@ class FileSystemViewer extends React.Component {
 	}
 }
 
-const mapStateToProps = (state)=>{
-	return {
-		root: state.dashboard.files
-	}
-}
-const mapDispatchToProps = (dispatch)=>{
-	return {
+export default FileSystemViewer
 
-	}
-}
+// const mapStateToProps = (state)=>{
+// 	return {
+// 		root: state.dashboard.files
+// 	}
+// }
+// const mapDispatchToProps = (dispatch)=>{
+// 	return {
 
-export default connect(mapStateToProps, mapDispatchToProps)(FileSystemViewer);
+// 	}
+// }
+
+// export default connect(mapStateToProps, mapDispatchToProps)(FileSystemViewer);

@@ -1,0 +1,20 @@
+.device-list {
+
+}
+.device-list-item {
+	cursor: pointer;
+}
+
+img.engine-icon {
+	width: 2.5em;
+}
+
+.engine-idle {
+	background: rgb(150, 250, 150);
+}
+.engine-busy {
+	background: rgb(250, 150, 150);
+}
+.engine-dead {
+	background: rgb(200, 200, 200);
+}
