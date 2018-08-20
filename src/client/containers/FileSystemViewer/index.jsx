@@ -84,12 +84,6 @@ class FileSystemViewer extends React.Component {
         this.$dash.fs.writeFile(this.state.cur_path, this.state.cur_file)
             .then((file)=>{
                 console.log("file saved", file);
-                // this.cur_code._id = file._id;
-                this.setState({
-                	cur_file: {
-                		_id: file._id
-                	}
-                })
                 this.refresh();
             });
     }
