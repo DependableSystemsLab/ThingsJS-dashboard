@@ -3,6 +3,8 @@ import {connect} from 'react-redux';
 import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormControl, Table,
 		ButtonGroup, Button, ListGroup, FieldGroup, PanelGroup, InputGroup, ListGroupItem, Image, Badge} from 'react-bootstrap';
 
+import {randKey} from '../../libs/things.js';
+
 import AceEditor from 'react-ace';
 
 import styles from './styles.css';
@@ -136,14 +138,22 @@ class ApplicationBuilder extends React.Component {
 	}
 
 	createApplication(){
+
 		// TODO form validation 
 		if(this.state.cur_app.name === '' || (Object.keys(this.state.cur_app.components).length === 0)){
 			console.log('Application missing details');
 			return;
 		}
+		// var file = {
+		// 	name: this.state.cur_app.name,
+		// 	content: JSON.stringify(Object.values(this.state.cur_app.components))
+		// }
 		var file = {
-			name: this.state.cur_app.name,
-			content: JSON.stringify(Object.values(this.state.cur_app.components))
+			name: randKey(),
+			content: JSON.stringify({ 
+				name: this.state.cur_app.name, 
+				components: Object.values(this.state.cur_app.components)
+			})
 		}
 		this.$dash.fs.writeFile(this.state.app_path, file)
 			.then((file)=>{
@@ -241,7 +251,7 @@ class ApplicationBuilder extends React.Component {
 		else{
 			curApps = (Object.values(this.state.existing_apps)).map((obj, index)=>{
 				// render the components for each application
-				var comps = Object.values(JSON.parse(obj.content)).map((comp, compIndex)=>{
+				var comps = Object.values(JSON.parse(obj.content).components).map((comp, compIndex)=>{
 					var fields = Object.keys(comp).map((field, i)=>{
 						return (
 							<th key={i}>{field}</th>
@@ -268,7 +278,7 @@ class ApplicationBuilder extends React.Component {
 								<i className="fa fa-trash"/> Delete
 							</Button>
 							<Panel.Title componentClass="h3" className="text-center" toggle>
-								{obj.name}
+								{JSON.parse(obj.content).name}
 							</Panel.Title>
 						</Panel.Heading>
 						<Panel.Body collapsible>
