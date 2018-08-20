@@ -143,6 +143,7 @@ class FileSystemViewer extends React.Component {
     }
 
     updateSelection(event, fsObject){
+    	event.stopPropagation();
     	var selection = Object.assign({}, this.state.cur_selection);
     	if(event.target.checked){
     		selection[fsObject._id] = null;
@@ -164,7 +165,7 @@ class FileSystemViewer extends React.Component {
 					<ListGroupItem key={index} onClick={(e)=>this.navigateTo(name)}>
 							<input 
 								type="checkbox"
-								onChange={(e)=>this.updateSelection(e, fsObject)}
+								onClick={(e)=>this.updateSelection(e, fsObject)}
 							/>
 							<i className="fa fa-folder"/> {name}
 					</ListGroupItem>
