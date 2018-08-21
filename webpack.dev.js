@@ -46,9 +46,13 @@ module.exports = {
     contentBase: path.join(__dirname, "public/"),
     disableHostCheck: true, // SECURITY WARNING: This flag makes the dev server open to public
     host: '0.0.0.0',
-    port: 3000,
+    port: 8000,
     proxy: {
-      "/fs": "http://localhost:8000",
+      "/fs": "http://localhost:3000",
+      "/pubsub": {
+        "target": "http://localhost:3000",
+        "ws": true
+      }
     },
     hotOnly: true
   }

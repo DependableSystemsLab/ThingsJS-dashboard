@@ -8,7 +8,7 @@ import store from './store.js';
 import { Dashboard } from './libs/things.js';
 
 var dashboard = new Dashboard({
-	pubsub_url: 'ws://'+window.location.hostname+':5000',
+	pubsub_url: ('ws://'+window.location.hostname+':'+window.location.port+'/pubsub'),
 	fs_url: (window.location.origin+'/fs'),
 });
 dashboard.connectReduxStore(store);
