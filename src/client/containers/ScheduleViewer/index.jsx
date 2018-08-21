@@ -3,6 +3,8 @@ import {connect} from 'react-redux';
 import {Row, Col, ButtonGroup, Button, Table, Tabs, Tab} from 'react-bootstrap';
 import * as d3 from 'd3';
 
+import EngineQuickCtrl from '../EngineQuickCtrl/';
+
 import style from './style.css';
 
 class ScheduleViewer extends React.Component {
@@ -60,7 +62,18 @@ class ScheduleViewer extends React.Component {
 		var yLine = axes.append('g').call(yAxis);
 
 		var grid = svg.append('g').attr('transform', 'translate('+margin.left+', '+margin.top+')');
-		
+
+		var infoPane = svg.append('g')
+			.attr('transform', 'translate('+margin.left+', '+margin.top+')')
+			.attr('style', 'z-index: 100;');
+
+		infoPane.append('rect')
+			.attr('class', 'info-pane')
+			.attr('fill', 'rgb(255,255,255)')
+			.attr('stroke', 'rgb(0,0,0)')
+		infoPane.append('text')
+			.attr('class', 'info-text')
+
 		var mouseTrack = grid.append('line')
 			.attr('x1', 0)
 			.attr('x2', 0)
@@ -95,6 +108,10 @@ class ScheduleViewer extends React.Component {
 				cursorText.attr('x', mousePos[0]).text(d3.timeFormat('%H:%M:%S.%L')(this.d3.cursorAt));
 			});
 
+		// var lineFunc = d3.line()
+		// 	.x(function(d, i){ return x(d.timestamp) })
+		// 	.y(function(d, i){ return y(d.value)})
+
 		var colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 		this.d3.svg = svg;
@@ -110,8 +127,10 @@ class ScheduleViewer extends React.Component {
 		this.d3.xLine = xLine;
 		this.d3.yLine = yLine;
 		this.d3.grid = grid;
+		this.d3.infoPane = infoPane;
 		this.d3.cursor = mouseCursor;
 		this.d3.cursorText = cursorText;
+		// this.d3.lineFunc = lineFunc;
 		this.d3.colors = colors;
 
 		this.d3.panLeft = ()=>{
@@ -198,6 +217,31 @@ class ScheduleViewer extends React.Component {
 		}
 	}
 
+	__show_d3_info (x, y, text){
+		var text = this.d3.infoPane.select('.info-text')
+			.text(text)
+			.attr('x', x)
+			.attr('y', y)
+			.attr('style', 'visibility: visible;');
+		var textBox = text.node().getBBox();
+
+		this.d3.infoPane.select('.info-pane')
+			.attr('x', textBox.x)
+			.attr('y', textBox.y)
+			.attr('width', textBox.width)
+			.attr('height', textBox.height)
+			.attr('style', 'visibility: visible;')
+
+		this.d3.infoPane.raise();
+	}
+
+	__hide_d3_info (){
+		this.d3.infoPane.select('.info-pane')
+			.attr('style', 'visibility: hidden;')
+		this.d3.infoPane.select('.info-text')
+			.attr('style', 'visibility: hidden;')
+	}
+
 	__redraw_d3_events(type){
 		var block = this.d3.yScale(1);
 
@@ -206,6 +250,8 @@ class ScheduleViewer extends React.Component {
 			.data(this.state.scheduler_events, (d)=>d.key);
 		sched_updates
 			.attr('x', (d)=>this.d3.xScale(d.timestamp))
+			.attr('y', 0)
+			.attr('height', block)
 		sched_updates.exit().remove();
 
 		var schedElem = sched_updates.enter().append('g');
@@ -214,12 +260,12 @@ class ScheduleViewer extends React.Component {
 			.attr('x', (d)=>this.d3.xScale(d.timestamp))
 			.attr('y', 0)
 			.attr('height', block)
-			.attr('width', 10)
+			.attr('width', 5)
 			.attr('fill', 'red')
 
 		// Update Engine Grid Boundaries First
-		var grid_updates = this.d3.grid.selectAll('engine-box')
-			.data(this.d3.yMap.engines, (d)=>d.key);
+		var grid_updates = this.d3.grid.selectAll('.engine-box')
+			.data(this.d3.yMap.engines, (d)=>d.id);
 		grid_updates
 			.attr('y', (d)=>this.d3.yScale(d.yIndex))
 			.attr('height', (d)=>((1 + d.procs.length) * block ))
@@ -235,8 +281,43 @@ class ScheduleViewer extends React.Component {
 			.attr('fill', 'rgba(255,255,255,0)')
 			.attr('stroke', 'rgb(150,150,150)')
 			.attr('stroke-width', 1)
-			.on('mouseover', function(d){ d3.select(this).attr('fill', 'rgba(250,100,100,0.5)') })
-			.on('mouseout', function(d){ d3.select(this).attr('fill', 'rgba(255,255,255,0)') });
+			.on('mouseover', function(d){ 
+				d3.select(this).attr('fill', 'rgba(250,100,100,0.5)')
+				gridElem.selectAll('text').attr('style', 'visibility: visible;')
+				})
+			.on('mouseout', function(d){ 
+				d3.select(this).attr('fill', 'rgba(255,255,255,0)') 
+				gridElem.selectAll('text').attr('style', 'visibility: hidden;')
+				})
+		gridElem.append('text')
+			.attr('x', this.d3.size.width / 2)
+			.attr('y', (d)=>this.d3.yScale(d.yIndex) + ((1 + d.procs.length) * block ) / 2)
+			.text((d)=>('Engine '+d.id))
+			.attr('style', 'visibility: hidden;')
+
+
+		// Update Engine Resource Graphs
+		var gy = d3.scaleLinear().domain([ 0, 100 ]).range([ block, 0 ])
+		var getEnginePlot = (engine)=>{ 
+			var lineFunc = d3.line()
+				.x((d, i)=>this.d3.xScale(d.timestamp))
+				.y((d, i)=>gy(d.value) + this.d3.yScale(engine.yIndex))
+			var engineData = this.props.engines[engine.id].stats.map((item)=>{
+				return { timestamp: item.timestamp, value: item.cpu };
+			})
+			return lineFunc(engineData)
+		}
+		var eng_graphs = this.d3.engineEvents.selectAll('.engine-graph')
+				.data(this.d3.yMap.engines, (d)=>d.id);
+		eng_graphs.selectAll('path')
+			.attr('d', getEnginePlot)
+		eng_graphs.exit().remove();
+		eng_graphs.enter().append('path')
+			.attr('class', 'engine-graph')
+			.attr('d', getEnginePlot)
+			.attr('stroke', 'rgba(100,100,100,0.5)')
+			.attr('stroke-width', 1)
+			.attr('fill', 'none');
 
 		// Update Engine Events
 		var getEngineY = (d)=>{
@@ -255,6 +336,7 @@ class ScheduleViewer extends React.Component {
 		eng_updates
 			.attr('x', (d)=>this.d3.xScale(d.timestamp))
 			.attr('y', getEngineY )
+			.attr('height', block)
 		eng_updates.exit().remove();
 
 		var engElem = eng_updates.enter().append('g');
@@ -264,15 +346,49 @@ class ScheduleViewer extends React.Component {
 			.attr('y', getEngineY )
 			// .attr('height', getEngineHeight)
 			.attr('height', block)
-			.attr('width', 10)
+			.attr('width', 5)
 			// .attr('height', 40)
 			.attr('fill', 'rgb(200,200,200)')
+			.on('mouseover', function(d){
+				self.__show_d3_info(self.d3.xScale(d.timestamp), getEngineY(d), 'Engine '+d.data.engine+' ('+d.data.status+')');
+			})
+			.on('mouseout', function(d){
+				self.__hide_d3_info();
+			})
 			// .on('mouseover', function(d){ d3.select(this).attr('r', 10) })
 			// .on('mouseout', function(d){ d3.select(this).attr('r', 5) })
 
+		// Update Program Resource Graphs
+		var getProgramPlot = (program)=>{ 
+			var lineFunc = d3.line()
+				.x((d, i)=>this.d3.xScale(d.timestamp))
+				.y((d, i)=>gy(d.value) + this.d3.yScale(program.yIndex));
+			console.log(this.props.programs, program);
+			if (program.id in this.props.programs){
+				var programData = this.props.programs[program.id].stats.map((item)=>{
+					return { timestamp: item.timestamp, value: item.cpu };
+				})
+				return lineFunc(programData)
+			}
+			return lineFunc([])
+		}
+		var pro_graphs = this.d3.programEvents.selectAll('.program-graph')
+				.data(this.d3.yMap.programs, (d)=>d.id)
+				.attr('d', getProgramPlot)
+		pro_graphs.exit().remove();
+		pro_graphs.enter().append('path')
+			.attr('class', 'program-graph')
+			.attr('d', getProgramPlot)
+			.attr('stroke', (d)=>this.d3.colors(this.d3.yMap.programs.findIndex((item)=>item.id===d.id)))
+			.attr('stroke-width', 2)
+			.attr('opacity', 0.5)
+			.attr('fill', 'none');
+			// .attr('fill', (d)=>this.d3.colors(this.d3.yMap.programs.findIndex((item)=>item.id===d.id)));
+
 		// Update Program Events
 		var getProgramY = (d)=>{
-			var proc = this.d3.yMap.programs.find((item)=>item.id === d.data.instance_id);
+			// console.log(this.d3.yMap.programs, d);
+			var proc = this.d3.yMap.programs.find((item)=>{ return (item.id === d.data.instance_id) && (item.engine === d.data.engine) });
 			return this.d3.yScale(proc.yIndex);
 		}
 		var getColor = (d)=>{
@@ -284,8 +400,10 @@ class ScheduleViewer extends React.Component {
 		pro_updates
 			.attr('x', (d)=>this.d3.xScale(d.timestamp))
 			.attr('y', getProgramY )
+			.attr('height', block)
 		pro_updates.exit().remove();
 
+		var self = this;
 		var proElem = pro_updates.enter().append('g');
 		proElem.append('rect')
 			.attr('class', (d)=>('program_'+d.data.instance_id))
@@ -293,9 +411,15 @@ class ScheduleViewer extends React.Component {
 			.attr('y', getProgramY )
 			// .attr('height', getEngineHeight)
 			.attr('height', block)
-			.attr('width', 10)
+			.attr('width', 5)
 			// .attr('height', 40)
-			.attr('fill', getColor)		
+			.attr('fill', getColor)
+			.on('mouseover', function(d){
+				self.__show_d3_info(self.d3.xScale(d.timestamp), getProgramY(d), d.data.code_name+' '+d.data.instance_id+' ('+d.data.status+')');
+			})
+			.on('mouseout', function(d){
+				self.__hide_d3_info();
+			})
 	}
 
 	__redraw_d3(){
@@ -336,7 +460,7 @@ class ScheduleViewer extends React.Component {
 						engine: engine.id,
 						yIndex: yMap.labels.length
 					});
-					yMap.labels.push('Program '+proc.instance_id)
+					yMap.labels.push(proc.code_name+' '+proc.instance_id)
 				});
 			});
 		this.d3.yMap = yMap;
@@ -459,7 +583,10 @@ class ScheduleViewer extends React.Component {
 											return (
 												<tr key={index}>
 													<td>{d3.timeFormat('%H:%M:%S.%L')(event.timestamp)}</td>
-													<td>{event.data.engine}</td>
+													<td>
+														<EngineQuickCtrl dash={this.props.dash} engine={this.props.engines[event.data.engine]}/>
+														{event.data.engine}
+													</td>
 													<td>{event.data.status}</td>
 												</tr>
 											)
