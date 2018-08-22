@@ -10,7 +10,7 @@ function defer(){
 	});
 	return deferred;
 }
-function randKey(length, charset){
+export function randKey(length, charset){
 	var text = "";
 	if (!length) length = 8;
 	if (!charset) charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
