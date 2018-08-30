@@ -182,7 +182,7 @@ MqttWsClient.prototype.subscribe = function(topic, handler){
 
 	if (this.socket.readyState === WebSocket.OPEN){
 		this.socket.send(JSON.stringify({ action: 'subscribe', topic: topic }));
-		console.log("Subscribed to "+topic+" at "+this.endpoint);
+		console.log("Subscribed to "+topic+" - handler "+handler_id);
 	}
 	else {
 		console.log("WebSocket is closed, cannot subscribe to ["+topic+"]");
@@ -198,6 +198,8 @@ MqttWsClient.prototype.unsubscribe = function(topic, handler_id){
 		&& (handler_id in this.subscriptions[topic].handlers)){
 		
 		delete this.subscriptions[topic].handlers[handler_id];
+
+		console.log("Unsubscribed from "+topic+" - handler "+handler_id);
 		// delete this.subscriptions[topic];
 
 		// if (this.socket.readyState === WebSocket.OPEN){
@@ -208,7 +210,7 @@ MqttWsClient.prototype.unsubscribe = function(topic, handler_id){
 		// }
 	}
 	else {
-		console.log("Already unsubscribed from topic ["+topic+"], cannot unsubscribe");
+		console.log("Already unsubscribed from topic ["+topic+"], cannot remove "+handler_id);
 	}
 }
 MqttWsClient.prototype.publish = function(topic, message){
@@ -525,7 +527,7 @@ Program.prototype.update = function(data, dashboard){
 	var curStatus = this.status;
 	this.engine = data.engine ? dashboard.engines[data.engine] : this.engine;
 	this.status = data.status;
-	this.meta = data.meta;
+	this.meta = data.meta || this.meta;
 	if (data.source) this.source = data.source;
 	if (curStatus !== data.status) this.emit('status-change', {
 		before: curStatus,

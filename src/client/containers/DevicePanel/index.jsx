@@ -1,14 +1,52 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import {Panel, Form, FormControl, ListGroup, ListGroupItem, ButtonGroup, Button, OverlayTrigger, Tooltip, Row, Col, Table, Image, Badge} from 'react-bootstrap';
+import {Panel, Form, FormControl, ListGroup, ListGroupItem, ButtonGroup, Button, OverlayTrigger, Tooltip, Dropdown, Row, Col, Table, Image, Badge, Modal} from 'react-bootstrap';
 
 import ProgramButtonGroup from '../ProgramButtonGroup/';
 import DeviceGraph from '../DeviceGraph/';
 import DeviceConsole from '../DeviceConsole/';
+import StreamViewer from '../../components/StreamViewer/';
 
 import style from './style.css';
 
 const DISPLAY_ORDER = ['Running', 'Paused', 'Exited'];
+
+const ICON_MAP = {
+	'image/png': 'image',
+	'image/jpeg': 'image',
+	'application/json': 'file',
+	'text/plain': 'file-alt',
+	'text/html': 'file-code',
+}
+
+function OutputList(props){
+	if (!props.program.meta.outputs) return (<p>No Output Stream</p>)
+	return (
+		<ListGroup>
+			{
+				Object.keys(props.program.meta.outputs)
+					.map((topic)=>{
+						var outputType = props.program.meta.outputs[topic];
+						var icon;
+						if (outputType in ICON_MAP){
+							icon = 'fa fa-'+ICON_MAP[outputType];
+						}
+						else {
+							icon = 'fa fa-question';
+						}
+
+						return (
+							<OverlayTrigger key={topic} placement="left" overlay={<Tooltip id={"tooltip-output-"+topic}>{outputType}</Tooltip>}>
+								<ListGroupItem onClick={(e)=>props.onClickOutput(props.program, outputType, topic)}>
+									<i className={icon}/> {topic}
+								</ListGroupItem>
+							</OverlayTrigger> 
+						)
+					})
+			}
+		</ListGroup>
+	)
+}
 
 function DeviceInfo(props){
 	return (
@@ -56,9 +94,23 @@ function DeviceInfo(props){
 														<i className="fa fa-eye"/>
 													</Button>
 												</OverlayTrigger>
+												<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-program-outputs">Show Outputs</Tooltip>}>
+													<Dropdown id="dropdown-program-outputs">
+														<Dropdown.Toggle bsStyle="default" bsSize="small" noCaret>
+															<i className="fa fa-file-export"/>
+														</Dropdown.Toggle>
+														<Dropdown.Menu>
+															<OutputList program={props.programs[instance_id]} onClickOutput={props.panel.showProgramOutput.bind(props.panel)}/>
+														</Dropdown.Menu>
+													</Dropdown>
+												</OverlayTrigger>
 												<strong>{instance_id}</strong>
 												{code[instance_id]}
-												<ProgramButtonGroup program={props.programs[instance_id]}/>
+												{
+													code[instance_id] !== 'Exited' ?
+													<ProgramButtonGroup program={props.programs[instance_id]}/>
+													: null
+												}
 											</div>
 										)
 									})
@@ -85,7 +137,12 @@ class DevicePanel extends React.Component {
 			selected_code: null,
 			selected_program: null,
 			engine: null,
-			codes: {}
+			codes: {},
+			output_modal: {
+				show: false,
+				topic: '',
+				mimeType: 'text/plain'
+			}
 		}
 		if (props.engine){
 			this.state.engine = props.engines[props.engine]
@@ -124,6 +181,25 @@ class DevicePanel extends React.Component {
 		this.setState(Object.assign({
 			view_mode: mode,
 		}, other_data));
+	}
+
+	showProgramOutput(program, mimeType, topic){
+		this.setState({
+			output_modal: {
+				show: true,
+				topic: topic,
+				mimeType: mimeType
+			}
+		})
+	}
+	hideOutputModal(){
+		this.setState({
+			output_modal: {
+				show: false,
+				topic: '',
+				mimeType: ''
+			}
+		})
 	}
 
 	selectEngine(engine_id){
@@ -228,6 +304,14 @@ class DevicePanel extends React.Component {
 				<Panel.Footer>
 					{panelFooter}
 				</Panel.Footer>
+				<Modal show={this.state.output_modal.show} onHide={(e)=>this.hideOutputModal()}>
+					<Modal.Header closeButton>
+						<Modal.Title>{}</Modal.Title>
+					</Modal.Header>
+					<Modal.Body>
+						<StreamViewer pubsub={this.$dash.pubsub} topic={this.state.output_modal.topic} mimeType={this.state.output_modal.mimeType}/>
+					</Modal.Body>
+				</Modal>
 			</Panel>
 		)
 	}

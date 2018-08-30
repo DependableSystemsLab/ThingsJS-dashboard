@@ -4,6 +4,8 @@ import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormCo
 		ButtonGroup, Button, ListGroup, ListGroupItem, InputGroup, Image, Badge} from 'react-bootstrap';
 
 import AceEditor from 'react-ace';
+import 'brace/mode/javascript';
+import 'brace/theme/github';
 
 class FileSystemViewer extends React.Component {
 	constructor(props){
@@ -220,7 +222,10 @@ class FileSystemViewer extends React.Component {
 							<ControlLabel>Content</ControlLabel>
 							<AceEditor 
 							 	onChange={this.updateFileContent.bind(this)}
-								value={this.state.cur_file.content}></AceEditor>
+								value={this.state.cur_file.content}
+								mode="javascript"
+								theme="github"
+								width="100%"></AceEditor>
 						</FormGroup>
 						<Button onClick={this.saveFile.bind(this)} bsStyle="primary" block>
 							Save

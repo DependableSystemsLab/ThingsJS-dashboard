@@ -44,8 +44,8 @@ class ProgramButtonGroup extends React.Component {
 				{pauseResumeBtn}
 				<OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-program-migrate">Migrate</Tooltip>}>
 					<Dropdown id="dropdown-program-migrate">
-						<Dropdown.Toggle bsStyle="info" bsSize="small">
-							<i className="fa fa-exchange"/>
+						<Dropdown.Toggle bsStyle="info" bsSize="small" noCaret>
+							<i className="fa fa-exchange-alt"/>
 						</Dropdown.Toggle>
 						<Dropdown.Menu>
 							<FormControl onChange={(evt)=>this.selectTargetEngine(evt.target.value)}

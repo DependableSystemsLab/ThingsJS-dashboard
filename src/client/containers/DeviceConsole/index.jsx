@@ -63,7 +63,7 @@ class DeviceConsole extends React.Component{
 
 
 	selectConsole(instance_id){
-		console.log(instance_id);
+		// console.log(instance_id);
 
 		this.__cleanUp();
 
