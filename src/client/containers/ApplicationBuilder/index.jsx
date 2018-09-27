@@ -1,6 +1,6 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormControl, Table,
+import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormControl, Table, Alert, 
 		ButtonGroup, Button, ListGroup, FieldGroup, PanelGroup, InputGroup, ListGroupItem, Image, Badge} from 'react-bootstrap';
 
 import {randKey} from '../../libs/things.js';
@@ -16,6 +16,8 @@ class ApplicationBuilder extends React.Component {
 		this.$dash = props.dash;
 
 		this.state = {
+			scheduler_id: 'things-scheduler',
+			scheduling_timeout: 6000,
 			app_path: '/Applications/Prototype',
 			cur_path: '/',
 			cur_path_tokens: [],
@@ -24,7 +26,11 @@ class ApplicationBuilder extends React.Component {
 				name: '',
 				components: {}
 			},
-			existing_apps: {}
+			existing_apps: {},
+			alert: {
+				text: '',
+				show: false
+			}
 		}
 
 		this.createAppFolder.bind(this)();
@@ -166,6 +172,32 @@ class ApplicationBuilder extends React.Component {
 			})
 	}
 
+	scheduleApplication(appDetails){
+		var self = this;
+		var replyTo = randKey();
+		var time = new Date();
+		var preMsg = 'Request at ' + time.toLocaleString() + ' for ' + appDetails.name;
+
+		var appRequest = {
+			ctrl: 'run_application',
+			kwargs: appDetails,
+			reply_to: replyTo,
+			request_id: replyTo
+		}
+		var requestTimeout = setTimeout(function(){
+			self.setState({ alert: { text: preMsg + ' failed.', show: true } });
+			self.$dash.pubsub.unsubscribe(replyTo);
+		}, this.state.scheduling_timeout);
+
+		this.$dash.pubsub.subscribe(replyTo, function(data){
+			self.setState({ alert: { text: preMsg + ' succeeded. Your token is ' + data, show: true } });
+			clearTimeout(requestTimeout);
+			self.$dash.pubsub.unsubscribe(replyTo);
+		})
+
+		this.$dash.pubsub.publish(this.state.scheduler_id + '/cmd', appRequest);
+	}
+
 	deleteApplication(id){
 		console.log('Deleting application ' + id);
 		this.$dash.fs.delete(this.state.cur_path, [id])
@@ -173,6 +205,10 @@ class ApplicationBuilder extends React.Component {
 				this.refresh();
 				this.fetchApps();
 			})
+	}
+
+	alertHide(){
+		this.setState({ alert: { text: '', show: false } });
 	}
 
 	render(){
@@ -283,7 +319,7 @@ class ApplicationBuilder extends React.Component {
 						</Panel.Heading>
 						<Panel.Body collapsible>
 							{comps}
-							<ButtonGroup vertical block>
+							<ButtonGroup vertical block onClick={(e)=>this.scheduleApplication.bind(this)(JSON.parse(obj.content))}>
 								<Button bsStyle="success">
 									<i className="fa fa-calendar"/> Schedule
 								</Button>
@@ -292,6 +328,18 @@ class ApplicationBuilder extends React.Component {
 					</Panel>
 				)
 			})
+		}
+
+		var appAlert;
+		if(this.state.alert.show){
+			appAlert = 
+				(<Alert bsStyle="warning">
+					{this.state.alert.text}
+					<Button bsSize="xsmall" className="pull-right" onClick={(e)=>this.alertHide()}>Dismiss</Button>
+				</Alert>)
+		}
+		else{
+			appAlert = null;
 		}
 
 		return (
@@ -364,11 +412,10 @@ class ApplicationBuilder extends React.Component {
 						<Panel.Title componentClass="h2">Existing applications</Panel.Title>
 					</Panel.Heading>
 					<Panel.Body>
-						<PanelGroup accordian="true" id="existing_apps">
-							{curApps}
-						</PanelGroup>
+						{curApps}
 					</Panel.Body>
 				</Panel>
+				{appAlert}
 			</PanelGroup>
 		)
 	}
