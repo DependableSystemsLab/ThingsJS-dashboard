@@ -18,8 +18,8 @@ class ApplicationBuilder extends React.Component {
 		this.state = {
 			scheduler_id: 'things-scheduler',
 			scheduling_timeout: 6000,
-			app_path: '/Applications/Prototype',
-			cur_path: '/',
+			app_path: '/apps',
+			cur_path: '/codes',
 			cur_path_tokens: [],
 			cur_dir: props.root,
 			cur_app: {
@@ -33,45 +33,27 @@ class ApplicationBuilder extends React.Component {
 			}
 		}
 
-		this.createAppFolder.bind(this)();
 	}
 
-	createAppFolder(){
-		this.$dash.fs.makeDir('/', 'Applications')
-			.then((res)=>{
-				this.$dash.fs.makeDir('/Applications', 'Prototype')
-					.then((res)=>{
-						this.refresh();
-						this.fetchApps();
-					})
-					.catch((e)=>{
-						this.refresh();
-						this.fetchApps();
-					})
-			})
-			.catch((err)=>{
-				this.$dash.fs.makeDir('/Applications', 'Prototype')
-					.then((res)=>{
-						this.refresh();
-						this.fetchApps();
-					})
-					.catch((e)=>{
-						this.refresh();
-						this.fetchApps();
-					})
-			})
+	componentDidMount() {
+		this.refreshCodes();
+		this.refreshApps();
 	}
 
-	fetchApps(){
+	refreshApps(){
 		this.$dash.fs.get(this.state.app_path)
-			.then((apps)=>{
+			.then((data)=>{
+				var apps = Object.keys(data.children).reduce((acc, key)=>{
+					acc[data.children[key]._id] = JSON.parse(data.children[key].content)
+					return acc;
+				}, {});
 				this.setState({
-					existing_apps: apps.children 
+					existing_apps: apps
 				})
 			})
 	}
 
-	refresh(){
+	refreshCodes(){
         this.$dash.fs.get(this.state.cur_path)
             .then((fsObject)=>{
                 console.log(fsObject);
@@ -114,26 +96,26 @@ class ApplicationBuilder extends React.Component {
 
 	selectComponent(code){
 		var app = JSON.parse(JSON.stringify(this.state.cur_app));
-		app['components'][code._id] = {
-			name: code.name, 
+		app.components[code.name] = {
+			code_name: code.name, 
 			source: code.content, 
 			count: 1, 
 			required_memory: 1,
-			component_id: code._id
+			// component_id: code._id
 		}
 		this.setState({ cur_app: app });
 	}
 
-	updateComponent(event, componentId, field){
+	updateComponent(event, code_name, field){
 		var app = JSON.parse(JSON.stringify(this.state.cur_app));
-		app['components'][componentId][field] = Number(event.target.value);
+		app.components[code_name][field] = Number(event.target.value);
 		this.setState({ cur_app: app });
 	}
 
-	removeComponent(componentId){
-		console.log('Deleting component ' + componentId);
+	removeComponent(code_name){
+		console.log('Deleting component ' + code_name);
 		var app = JSON.parse(JSON.stringify(this.state.cur_app));
-		delete app['components'][componentId];
+		delete app.components[code_name];
 		this.setState({ cur_app: app });
 	}
 
@@ -147,28 +129,22 @@ class ApplicationBuilder extends React.Component {
 
 		// TODO form validation 
 		if(this.state.cur_app.name === '' || (Object.keys(this.state.cur_app.components).length === 0)){
-			console.log('Application missing details');
+			// console.log('Application missing details');
+			this.setState({ alert: { text: 'Application missing details', show: true } });
 			return;
 		}
-		// var file = {
-		// 	name: this.state.cur_app.name,
-		// 	content: JSON.stringify(Object.values(this.state.cur_app.components))
-		// }
 		var file = {
-			name: randKey(),
-			content: JSON.stringify({ 
-				name: this.state.cur_app.name, 
-				components: Object.values(this.state.cur_app.components)
-			})
+			name: randKey()+'.things',
+			content: JSON.stringify(this.state.cur_app)
 		}
 		this.$dash.fs.writeFile(this.state.app_path, file)
 			.then((file)=>{
 				console.log('Application saved');
 				this.setState({ cur_app: { name: '', components: {} }});
-				this.fetchApps();
+				this.refreshApps();
 			})
 			.catch((e)=>{
-				this.setState({ cur_app: { name: '', components: {} }});
+				// this.setState({ cur_app: { name: '', components: {} }});
 			})
 	}
 
@@ -202,8 +178,8 @@ class ApplicationBuilder extends React.Component {
 		console.log('Deleting application ' + id);
 		this.$dash.fs.delete(this.state.cur_path, [id])
 			.then((res)=>{
-				this.refresh();
-				this.fetchApps();
+				this.refreshCodes();
+				this.refreshApps();
 			})
 	}
 
@@ -255,23 +231,23 @@ class ApplicationBuilder extends React.Component {
 			curComponents = Object.values(this.state.cur_app.components).map((obj, index)=>{
 				return (
 					<ListGroupItem key={index}>
-						<ControlLabel>{obj.name}</ControlLabel>
+						<ControlLabel>{obj.code_name}</ControlLabel>
 
 						<InputGroup>
 							<InputGroup.Addon>count</InputGroup.Addon>
 							<FormControl type="number" min="1" defaultValue="1"
-								onChange={(e)=>this.updateComponent.bind(this)(e, obj.component_id, "count")}/>
+								onChange={(e)=>this.updateComponent.bind(this)(e, obj.code_name, "count")}/>
 						</InputGroup>
 
 						<InputGroup>
 							<InputGroup.Addon>required memory</InputGroup.Addon>
 							<FormControl type="number" min="1" defaultValue="1"
-								onChange={(e)=>this.updateComponent.bind(this)(e, obj.component_id, "required_memory")}/>
+								onChange={(e)=>this.updateComponent.bind(this)(e, obj.code_name, "required_memory")}/>
 							<InputGroup.Addon>bytes</InputGroup.Addon>
 						</InputGroup>
 						{/* button is nested in ListGroupItem only for styling purposes */}
 						<ListGroupItem>
-							<Button bsStyle="danger" onClick={(e)=>this.removeComponent.bind(this)(obj.component_id)}>
+							<Button bsStyle="danger" onClick={(e)=>this.removeComponent.bind(this)(obj.code_name)}>
 								<i className="fa fa-trash"/> Remove
 							</Button>
 						</ListGroupItem>
@@ -285,41 +261,41 @@ class ApplicationBuilder extends React.Component {
 			curApps = (<ListGroupItem className="text-center">- No existing applications -</ListGroupItem>)
 		}
 		else{
-			curApps = (Object.values(this.state.existing_apps)).map((obj, index)=>{
+			curApps = Object.keys(this.state.existing_apps).map((key, index)=>{
 				// render the components for each application
-				var comps = Object.values(JSON.parse(obj.content).components).map((comp, compIndex)=>{
-					var fields = Object.keys(comp).map((field, i)=>{
-						return (
-							<th key={i}>{field}</th>
-						)
-					})
-					var fieldValues = Object.values(comp).map((val, k)=>{
-						return (
-							<td key={k}>{val}</td>
-						)
-					})
-
-					return (
-						<Table key={compIndex} striped bordered condensed hover>
-							<thead><tr>{fields}</tr></thead>
-							<tbody><tr>{fieldValues}</tr></tbody>
-						</Table>
-					)
-				})
+				var app = this.state.existing_apps[key];
+				var comps = (
+					<Table striped bordered condensed hover>
+						<thead><tr><th>Component</th><th>Count</th><th>Memory Required</th></tr></thead>
+						<tbody>
+						{
+							Object.values(app.components).map((comp, compIndex)=>{
+								return (
+									<tr key={compIndex}>
+										<td>{comp.code_name}</td>
+										<td>{comp.count}</td>
+										<td>{comp.required_memory}</td>
+									</tr>
+								)
+							})
+						}
+						</tbody>
+					</Table>
+				)
 
 				return (
-					<Panel bsStyle="info" key={index} eventKey={String(index)}>
+					<Panel bsStyle="info" key={key} eventKey={String(index)}>
 						<Panel.Heading>
-							<Button bsStyle="danger" bsSize="xsmall" className="pull-right" onClick={(e)=>this.deleteApplication.bind(this)(obj._id)}>
+							<Button bsStyle="danger" bsSize="xsmall" className="pull-right" onClick={(e)=>this.deleteApplication.bind(this)(key)}>
 								<i className="fa fa-trash"/> Delete
 							</Button>
 							<Panel.Title componentClass="h3" className="text-center" toggle>
-								{JSON.parse(obj.content).name}
+								{app.name}
 							</Panel.Title>
 						</Panel.Heading>
 						<Panel.Body collapsible>
 							{comps}
-							<ButtonGroup vertical block onClick={(e)=>this.scheduleApplication.bind(this)(JSON.parse(obj.content))}>
+							<ButtonGroup vertical block onClick={(e)=>this.scheduleApplication.bind(this)(app)}>
 								<Button bsStyle="success">
 									<i className="fa fa-calendar"/> Schedule
 								</Button>
@@ -343,71 +319,77 @@ class ApplicationBuilder extends React.Component {
 		}
 
 		return (
-			<PanelGroup id="application_builder">
-				{/* create new application */}
-				<Panel bsStyle="primary">
+			<Row>
+			  <Col xs={12} md={8}>
+			  	<Panel bsStyle="primary">
 					<Panel.Heading>
 						<Panel.Title componentClass="h2">New application</Panel.Title>
 					</Panel.Heading>
 					<Panel.Body>
-						<Form horizontal>
-							<FormGroup>
-								<Col xs={12} md={12}>
+						<Row>
+						  <Col xs={12} md={4}>
+						    <FormGroup>
+						        <ControlLabel>Available components</ControlLabel>
+								<Panel>
+									<Panel.Heading>
+										<Button bsSize="xsmall" onClick={()=>this.refreshCodes()}>
+											<i className="fa fa-sync-alt"/>
+										</Button>
+										<Button bsSize="xsmall" className="pull-right" onClick={()=>this.navigateTo("/")}>
+											<i className="fa fa-home"/> Root
+										</Button>
+									</Panel.Heading>
+									<Panel.Body>
+										<ListGroup>
+											{
+												(this.state.cur_path === '/' ? null: (
+													<ListGroupItem onClick={()=>this.navigateTo("..")}>
+														<i className="fa fa-folder"/> ..
+													</ListGroupItem>)
+												)
+											}
+											{curDirs}
+											{curFiles}
+										</ListGroup>
+									</Panel.Body>
+								</Panel>
+						    </FormGroup>
+
+						  </Col>
+
+						  <Col xs={12} md={8}>
+						  	<Form horizontal>
+								<FormGroup>
 									<ControlLabel>Application name</ControlLabel>
 									<FormControl 
 										type="text" 
 										placeholder="Application name"
 										onChange={this.setApplicationName.bind(this)}>
 									</FormControl>
-								</Col>
-							</FormGroup>
+								</FormGroup>
 
-							<FormGroup>
-								{/* component selector */}
-								<Col xs={12} md={4}>
-									<ControlLabel>Available components</ControlLabel>
-									<Panel>
-										<Panel.Heading>
-											<Button bsSize="xsmall" onClick={this.refresh.bind(this)}>
-												<i className="fa fa-refresh"/> Directory
-											</Button>
-											<Button bsSize="xsmall" className="pull-right" onClick={()=>this.navigateTo("/")}>
-												<i className="fa fa-home"/> Root
-											</Button>
-										</Panel.Heading>
-										<Panel.Body>
-											<ListGroup>
-												{
-													(this.state.cur_path === '/' ? null: (
-														<ListGroupItem onClick={()=>this.navigateTo("..")}>
-															<i className="fa fa-folder"/> ..
-														</ListGroupItem>)
-													)
-												}
-												{curDirs}
-												{curFiles}
-											</ListGroup>
-										</Panel.Body>
-									</Panel>
-								</Col>
-								{/* requirement selector */}
-								<Col xs={12} md={8}>
+								<FormGroup>
 									<ControlLabel>Component requirements</ControlLabel>
 									<ListGroup className="Scroll">{curComponents}</ListGroup>
-								</Col>
-							</FormGroup>
+								</FormGroup>
 
-							<FormGroup>
-								{/* submit */}
-								<Button bsStyle="primary" className="center-block" onClick={this.createApplication.bind(this)}> 
-									<i className="fa fa-save"/> Save application
-								</Button>
-							</FormGroup>
-						</Form>
+								{appAlert}
+
+								<FormGroup>
+									{/* submit */}
+									<Button bsStyle="primary" className="center-block" onClick={this.createApplication.bind(this)}> 
+										<i className="fa fa-save"/> Save application
+									</Button>
+								</FormGroup>
+							</Form>
+						  </Col>
+						</Row>
 					</Panel.Body>
 				</Panel>
-				{/* view existing applications */}
-				<Panel bsStyle="primary">
+			  </Col>
+
+			  <Col xs={12} md={4}>
+			  	<Panel bsStyle="primary">
 					<Panel.Heading>
 						<Panel.Title componentClass="h2">Existing applications</Panel.Title>
 					</Panel.Heading>
@@ -415,8 +397,8 @@ class ApplicationBuilder extends React.Component {
 						{curApps}
 					</Panel.Body>
 				</Panel>
-				{appAlert}
-			</PanelGroup>
+			  </Col>
+			</Row>
 		)
 	}
 }
