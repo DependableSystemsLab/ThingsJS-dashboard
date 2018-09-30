@@ -584,7 +584,7 @@ export function Dashboard(config){
 		fs_url: (window.location.origin+'/fs'),
 		topic_engine_registry: 'engine-registry',
 		topic_program_monitor: 'program-monitor',
-		topic_scheduler_namespace: 'scheduler'
+		topic_scheduler_namespace: 'things-scheduler'
 	}, config);
 
 	var pubsub = this.pubsub = new MqttWsClient(this.config.pubsub_url);
@@ -699,6 +699,15 @@ Dashboard.prototype.ackedPublish = function(topic, ctrl, kwargs){
 
 Dashboard.prototype.runApplication = function(application){
 	return this.ackedPublish(this.config.topic_scheduler_namespace+'/cmd', 'run_application', application)
+};
+Dashboard.prototype.pauseApplication = function(token){
+	return this.ackedPublish(this.config.topic_scheduler_namespace+'/cmd', 'pause_application', { token: token })
+};
+Dashboard.prototype.resumeApplication = function(token){
+	return this.ackedPublish(this.config.topic_scheduler_namespace+'/cmd', 'resume_application', { token: token })
+};
+Dashboard.prototype.killApplication = function(token){
+	return this.ackedPublish(this.config.topic_scheduler_namespace+'/cmd', 'kill_application', { token: token })
 };
 
 Dashboard.prototype.connectReduxStore = function(redux_store){

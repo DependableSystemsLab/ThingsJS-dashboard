@@ -150,28 +150,30 @@ class ApplicationBuilder extends React.Component {
 
 	scheduleApplication(appDetails){
 		var self = this;
-		var replyTo = randKey();
+		
 		var time = new Date();
 		var preMsg = 'Request at ' + time.toLocaleString() + ' for ' + appDetails.name;
 
-		var appRequest = {
-			ctrl: 'run_application',
-			kwargs: appDetails,
-			reply_to: replyTo,
-			request_id: replyTo
-		}
-		var requestTimeout = setTimeout(function(){
-			self.setState({ alert: { text: preMsg + ' failed.', show: true } });
-			self.$dash.pubsub.unsubscribe(replyTo);
-		}, this.state.scheduling_timeout);
+		this.$dash.runApplication(appDetails)
+			.then(function(response){
+				self.setState({ alert: { text: preMsg + ' succeeded. Your token is ' + response.token, show: true } });
+			})
+			.catch(function(error){
+				console.log(error);
+				self.setState({ alert: { text: preMsg + ' failed.', show: true } });
+			})
+	}
 
-		this.$dash.pubsub.subscribe(replyTo, function(data){
-			self.setState({ alert: { text: preMsg + ' succeeded. Your token is ' + data, show: true } });
-			clearTimeout(requestTimeout);
-			self.$dash.pubsub.unsubscribe(replyTo);
-		})
+	pauseApplication(token){
+		this.$dash.pauseApplication(token)
+	}
 
-		this.$dash.pubsub.publish(this.state.scheduler_id + '/cmd', appRequest);
+	resumeApplication(token){
+		this.$dash.resumeApplication(token)
+	}
+
+	killApplication(token){
+		this.$dash.killApplication(token)
 	}
 
 	deleteApplication(id){
