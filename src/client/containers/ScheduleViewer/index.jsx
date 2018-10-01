@@ -4,6 +4,7 @@ import {Row, Col, ButtonGroup, Button, Table, Tabs, Tab} from 'react-bootstrap';
 import * as d3 from 'd3';
 
 import EngineQuickCtrl from '../EngineQuickCtrl/';
+import ApplicationCtrl from '../ApplicationCtrl/';
 
 import style from './style.css';
 
@@ -541,6 +542,7 @@ class ScheduleViewer extends React.Component {
 				</Col>
 
 				<Col xs={12} md={3}>
+					<ApplicationCtrl dash={this.props.dash}/>
 					<Tabs id="system-event-tabs">
 						<Tab title="Scheduler" eventKey={1}>
 							<div style={{ maxHeight: 400+'px', overflow: 'auto' }}>

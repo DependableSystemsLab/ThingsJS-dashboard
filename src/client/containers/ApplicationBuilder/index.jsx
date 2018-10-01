@@ -2,11 +2,10 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {Grid, Row, Col, Breadcrumb, Panel, Form, FormGroup, ControlLabel, FormControl, Table, Alert, 
 		ButtonGroup, Button, ListGroup, FieldGroup, PanelGroup, InputGroup, ListGroupItem, Image, Badge} from 'react-bootstrap';
-
-import {randKey} from '../../libs/things.js';
-
 import AceEditor from 'react-ace';
 
+import ApplicationCtrl from '../ApplicationCtrl/';
+import {randKey} from '../../libs/things.js';
 import styles from './styles.css';
 
 class ApplicationBuilder extends React.Component {
@@ -399,6 +398,8 @@ class ApplicationBuilder extends React.Component {
 						{curApps}
 					</Panel.Body>
 				</Panel>
+
+				<ApplicationCtrl dash={this.props.dash}/>
 			  </Col>
 			</Row>
 		)

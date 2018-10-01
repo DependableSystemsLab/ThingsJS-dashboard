@@ -593,6 +593,7 @@ export function Dashboard(config){
 	this.engines = {};
 	this.programs = {};
 	this.files = {};
+	this.apps = {};
 	this.history = [];
 
 	this._requests = {};
@@ -653,16 +654,27 @@ export function Dashboard(config){
 		// self.emit('update');
 	});
 
-	pubsub.subscribe('scheduler/events', function(topic, message){
+	pubsub.subscribe(this.config.topic_scheduler_namespace+'/events', function(topic, message){
 		self.history.push(message);
 		if (self.history.length > 1000) self.history.shift();
 		self.emit('system-event', message);
+	});
+
+	pubsub.subscribe(this.config.topic_scheduler_namespace+'/state', function(topic, message){
+		self.apps = message.apps;
+		self.emit('system-state', message);
 	});
 
 	pubsub.on('connect', function(){
 		setTimeout(function(){
 			pubsub.publish(self.config.topic_engine_registry+'/bcast', { ctrl: 'report' });
 			pubsub.publish(self.config.topic_program_monitor+'/bcast', { ctrl: 'report' });
+			self.ackedPublish(self.config.topic_scheduler_namespace+'/cmd', 'report')
+				.then(function(state){
+					console.log("Scheduler returned its state", state);
+					self.apps = state.apps;
+					self.emit('system-state', state);
+				})
 
 			fs.get('/')
 				.then(function(fsObject){
@@ -737,6 +749,13 @@ Dashboard.prototype.connectReduxStore = function(redux_store){
 		redux_store.dispatch({
 			type: 'system-event',
 			payload: { event: event_data }
+		})
+	});
+
+	this.on('system-state', function(event_data){
+		redux_store.dispatch({
+			type: 'system-state',
+			payload: event_data
 		})
 	});
 
