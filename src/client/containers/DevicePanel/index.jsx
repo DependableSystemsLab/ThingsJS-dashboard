@@ -125,6 +125,74 @@ function DeviceInfo(props){
 	)
 }
 
+class DeviceOutput extends React.Component{
+	constructor(props){
+		super();
+
+		this.$dash = props.panel.$dash;
+		this.state = {
+			topic: props.selected_stream.topic,
+			mimeType: props.selected_stream.mimeType
+		}
+	}
+
+	setStream(topic, mimeType){
+		this.setState({
+			topic: topic,
+			mimeType: mimeType
+		})
+	}
+
+	render(){
+		var outputs = (
+			<ListGroup>
+			{
+				Object.keys(this.props.programs).map((instance_id)=>{
+					var prog = this.props.programs[instance_id];
+					var topics = (prog.meta.outputs) ? Object.keys(prog.meta.outputs) : [];
+					if (prog.status != 'Exited' && topics.length > 0){
+						return (
+							<ListGroupItem key={instance_id}>
+								<p>{prog.code_name} - {instance_id}</p>
+								{
+									topics.map((topic)=>{
+										var outputType = prog.meta.outputs[topic];
+										var icon = (outputType in ICON_MAP) ? ('fa fa-'+ICON_MAP[outputType]) : 'fa fa-question';
+										
+										return (
+											<p key={instance_id+'/'+topic} className={(this.state.topic == topic) ? 'bg-success' : ''}>
+												<a onClick={()=>this.setStream(topic, outputType)}>
+													<i className={icon}/> {topic}
+												</a>
+											</p>
+										)
+									})
+								}
+							</ListGroupItem>
+						)
+					}
+					else return null;
+				})
+			}
+			</ListGroup>
+		)
+
+		return (
+			<Row>
+				<Col xs={12} md={8}>
+					<StreamViewer
+						pubsub={this.$dash.pubsub} 
+						topic={this.state.topic}
+						mimeType={this.state.mimeType}/>
+				</Col>
+				<Col xs={12} md={4}>
+					{outputs}
+				</Col>
+			</Row>
+		)
+	}
+}
+
 class DevicePanel extends React.Component {
 	constructor(props){
 		super();
@@ -136,6 +204,10 @@ class DevicePanel extends React.Component {
 			view_mode: 'info',
 			selected_code: null,
 			selected_program: null,
+			selected_stream: {
+				topic: '',
+				mimeType: ''
+			},
 			engine: null,
 			codes: {},
 			output_modal: {
@@ -185,12 +257,20 @@ class DevicePanel extends React.Component {
 
 	showProgramOutput(program, mimeType, topic){
 		this.setState({
-			output_modal: {
-				show: true,
+			view_mode: 'outputs',
+			selected_stream: {
 				topic: topic,
 				mimeType: mimeType
 			}
-		})
+		});
+
+		// this.setState({
+		// 	output_modal: {
+		// 		show: true,
+		// 		topic: topic,
+		// 		mimeType: mimeType
+		// 	}
+		// })
 	}
 	hideOutputModal(){
 		this.setState({
@@ -245,6 +325,9 @@ class DevicePanel extends React.Component {
 			else if (this.state.view_mode === 'console'){
 				panelBody = <DeviceConsole engine={this.state.engine} instance_id={this.state.selected_program} ctrl={ctrl} dash={this.$dash}/>
 			}
+			else if (this.state.view_mode === 'outputs'){
+				panelBody = <DeviceOutput programs={this.props.programs} panel={this} selected_stream={this.state.selected_stream}/>
+			}
 			else {
 				panelBody = <p>Unknown Mode</p>
 			}
@@ -296,6 +379,7 @@ class DevicePanel extends React.Component {
 						<Button onClick={(e)=>this.setViewMode('info')}>Info</Button>
 						<Button onClick={(e)=>this.setViewMode('graph')}>Graph</Button>
 						<Button onClick={(e)=>this.setViewMode('console')}>Console</Button>
+						<Button onClick={(e)=>this.setViewMode('outputs')}>Output</Button>
 					</ButtonGroup>
 				</Panel.Heading>
 				<Panel.Body>
