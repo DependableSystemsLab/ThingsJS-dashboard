@@ -36,10 +36,10 @@ export default class Base extends React.Component {
 				  </Navbar.Header>
 				  <Navbar.Collapse>
 				    <Nav pullRight>
-				      <NavItem eventKey={1} href="https://karthikp-ubc.github.io/ThingsJS">
+				      <NavItem eventKey={1} href="https://dependablesystemslab.github.io/ThingsJS">
 				        <i className="fa fa-book"></i> API Docs
 				      </NavItem>
-				      <NavItem eventKey={2} href="https://github.com/karthikp-ubc/ThingsJS">
+				      <NavItem eventKey={2} href="https://github.com/DependableSystemsLab/ThingsJS">
 				        <i className="fab fa-github"></i> Source
 				      </NavItem>
 				    </Nav>

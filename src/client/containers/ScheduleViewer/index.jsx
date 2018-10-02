@@ -529,7 +529,7 @@ class ScheduleViewer extends React.Component {
 								<i className="fa fa-search-minus"/>
 							</Button>
 							<Button onClick={(evt)=>this.d3.resetView(this)}>
-								<i className="fa fa-refresh"/>
+								<i className="fa fa-sync"/>
 							</Button>
 							<Button onClick={(evt)=>this.d3.zoomIn(this)}>
 								<i className="fa fa-search-plus"/>
