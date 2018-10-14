@@ -236,23 +236,18 @@ FileSystem.prototype.get = function(abs_path){
 	return new Promise(function(resolve, reject){
 		$.ajax(joinPath(self.base_url, abs_path))
 			.done(function(data, status, xhr){
-				console.log(data);
-				
-				var info = Object.keys(data.children)
-					.reduce(function(acc, key){
-						if (data.children[key].type === 'directory') acc.dirs.push(key);
-						else if (data.children[key].type === 'file') acc.files.push(key);
-						return acc
-					}, {
-						dirs: [],
-						files: []
-					});
-				Object.assign(data, info);
-				if (data.type === 'file'){
-					data.content = data.content || '';	
+				if (data.type === 'directory'){
+					data.dirs = [];
+					data.files = [];
+					Object.keys(data.content)
+						.forEach(function(key){
+							console.log(data.content[key]);
+							if (data.content[key].type === 'file') data.files.push(key);
+							else if (data.content[key].type === 'directory') data.dirs.push(key);
+							else console.log('Response from GFS server contains unexpected data');
+						})
 				}
-				
-				resolve(data || {});
+				resolve(data);
 			})
 			.fail(function(xhr, status, error){
 				console.log(status, error);

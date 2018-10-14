@@ -32,8 +32,8 @@ class ApplicationCtrl extends React.Component {
 	refresh(){
 		this.$dash.fs.get('/apps')
 			.then((data)=>{
-				var apps = Object.keys(data.children).reduce((acc, key)=>{
-					acc[data.children[key]._id] = JSON.parse(data.children[key].content)
+				var apps = Object.keys(data.content).reduce((acc, key)=>{
+					acc[data.content[key]._id] = JSON.parse(data.content[key].content)
 					return acc;
 				}, {});
 				this.setState({

@@ -162,7 +162,7 @@ class FileSystemViewer extends React.Component {
 		var curDirs;
 		if (this.state.cur_dir.dirs && this.state.cur_dir.dirs.length > 0){
 			curDirs = this.state.cur_dir.dirs.map((name, index)=>{
-				var fsObject = this.state.cur_dir.children[name];
+				var fsObject = this.state.cur_dir.content[name];
 				return (
 					<ListGroupItem key={index} onClick={(e)=>this.navigateTo(name)}>
 							<input 
@@ -181,7 +181,7 @@ class FileSystemViewer extends React.Component {
 		var curFiles;
 		if (this.state.cur_dir.files && this.state.cur_dir.files.length > 0){
 			curFiles = this.state.cur_dir.files.map((name, index)=>{
-				var file = this.state.cur_dir.children[name];
+				var file = this.state.cur_dir.content[name];
 				return (
 					<ListGroupItem key={index} onClick={(e)=>this.loadFile(file)}>
 							<input 

@@ -1,6 +1,6 @@
 var path = require('path');
 var http = require('http');
-// var mongoose = require('mongoose');
+var mongoose = require('mongoose');
 var express = require('express');
 // var session = require('express-session');
 // var cookieParser = require('cookie-parser');
@@ -8,7 +8,7 @@ var helmet = require('helmet');
 var chalk = require('chalk');
 
 var MqttWsBridge = require('things-js').util.MqttWsBridge;
-var FSServer = require('things-js').addons.FSServer;
+var GFS = require('things-js').util.GFS;
 
 /* helpers */
 function httpDebugger(req, res, next){
@@ -34,15 +34,22 @@ function startApp(config){
 	var config = Object.assign({
 		port: 3000,
 		static_path: path.resolve(__dirname, '../../dist/'),
-		fs_db_url: 'mongodb://localhost:27017/things-js-fs',
+		fs_db_url: 'mongodb://localhost:27017/things-js-gfs',
 		pubsub_url: 'mqtt://localhost'
 	}, config)
+
+	mongoose.connect(config.fs_db_url, { useNewUrlParser: true });
+	var db = mongoose.connection;
+	db.on('error', function(){
+		console.log('[DB] Connection ERROR');
+	});
+	db.once('open', function(){
+		console.log('[DB] Connection SUCCESS')
+	});
+	
 	/* Create main express app  */
 	var app = express();
 	var server = http.createServer(app);
-
-	var gfs_router = express.Router()
-	var gfs = new FSServer(config.fs_db_url, gfs_router);
 
 	var bridge = new MqttWsBridge(config.pubsub_url, { server: server, path: '/pubsub' });
 
@@ -55,7 +62,7 @@ function startApp(config){
 
 	/* Public App */
 	// app.use('/docs', express.static(DOCS_PATH));
-	app.use('/fs', gfs_router);
+	app.use('/fs', GFS.createRouter(db));
 
 	app.use('/', express.static(config.static_path));
 	app.get('*', function(req, res, next){

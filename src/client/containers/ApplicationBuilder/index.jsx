@@ -42,8 +42,8 @@ class ApplicationBuilder extends React.Component {
 	refreshApps(){
 		this.$dash.fs.get(this.state.app_path)
 			.then((data)=>{
-				var apps = Object.keys(data.children).reduce((acc, key)=>{
-					acc[data.children[key]._id] = JSON.parse(data.children[key].content)
+				var apps = Object.keys(data.content).reduce((acc, key)=>{
+					acc[data.content[key]._id] = JSON.parse(data.content[key].content)
 					return acc;
 				}, {});
 				this.setState({
@@ -203,7 +203,7 @@ class ApplicationBuilder extends React.Component {
 		var curFiles;
 		if (this.state.cur_dir.files && this.state.cur_dir.files.length > 0){
 			curFiles = this.state.cur_dir.files.map((name, index)=>{
-				var codeObject = this.state.cur_dir.children[name];
+				var codeObject = this.state.cur_dir.content[name];
 				return (
 				    <InputGroup key={index}>
 				      	<InputGroup.Button>
