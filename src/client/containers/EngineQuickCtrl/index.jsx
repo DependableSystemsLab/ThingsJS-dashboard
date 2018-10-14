@@ -19,7 +19,7 @@ class EngineQuickCtrl extends React.Component {
 
 				// console.log(fsObject);
 				this.setState({
-					codes: fsObject.children
+					codes: fsObject.content
 				});
 
 			});
