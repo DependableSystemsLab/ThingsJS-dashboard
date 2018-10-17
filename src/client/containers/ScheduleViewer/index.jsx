@@ -424,7 +424,7 @@ class ScheduleViewer extends React.Component {
 	}
 
 	__redraw_d3(){
-		console.log('Redrawing Schedule Graph', this.state);
+		// console.log('Redrawing Schedule Graph', this.state);
 		if (this.props.history.length > 0){
 			// this.d3.xScale.domain([ this.props.history[0].timestamp, this.props.history[this.props.history.length-1].timestamp ]);
 			if (this.d3.view.from === 0 || this.d3.view.to === 0){
@@ -510,7 +510,7 @@ class ScheduleViewer extends React.Component {
 	}
 
 	componentDidUpdate(prevProps){
-		console.log('ScheduleViewer UPDATED', prevProps);
+		// console.log('ScheduleViewer UPDATED', prevProps);
 		// this.__redraw_d3();
 
 	}

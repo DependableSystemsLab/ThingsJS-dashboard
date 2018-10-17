@@ -196,7 +196,7 @@ class DeviceOutput extends React.Component{
 class DevicePanel extends React.Component {
 	constructor(props){
 		super();
-		console.log("DevicePanel Created", props);
+		// console.log("DevicePanel Created", props);
 
 		this.$dash = props.dash;
 
@@ -232,7 +232,7 @@ class DevicePanel extends React.Component {
 
 			});
 		this.handlerID = this.$dash.on('engine-registry-event', (engine)=>{
-			console.log('Engine status changed!', engine);
+			// console.log('Engine status changed!', engine);
 		})
 	}
 	
@@ -241,7 +241,7 @@ class DevicePanel extends React.Component {
 	}
 
 	componentDidUpdate(prevProps){
-		console.log("DevicePanel Updated", this.props, this.state);
+		// console.log("DevicePanel Updated", this.props, this.state);
 		if (this.props.engine !== prevProps.engine){
 			this.setState({
 				engine: this.props.engines[this.props.engine]
@@ -295,7 +295,7 @@ class DevicePanel extends React.Component {
 	runCode(){
 		this.state.engine.runCode(this.state.selected_code, this.state.codes[this.state.selected_code].content)
 			.then(function(result){
-				console.log('Successfully launched code', result);
+				// console.log('Successfully launched code', result);
 			})
 	}
 	pauseCode(instance_id){

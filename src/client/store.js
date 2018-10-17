@@ -10,5 +10,5 @@ export default createStore(
 		dashboard: DashboardReducer
 	}),
 	{},
-	applyMiddleware(logger, thunk, promise())
+	// applyMiddleware(logger, thunk, promise())
 );

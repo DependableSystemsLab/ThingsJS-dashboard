@@ -14,7 +14,7 @@ import './App.css';
 class App extends Component{
   constructor(props){
     super();
-    console.log("App Component", props);
+    // console.log("App Component", props);
     this.dash = props.dashboard;
   }
 

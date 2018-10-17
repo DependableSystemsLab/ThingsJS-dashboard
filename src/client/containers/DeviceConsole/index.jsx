@@ -10,37 +10,53 @@ class DeviceConsole extends React.Component{
 	constructor (props){
 		super();
 
-		this.state = {
-			instance_id: props.instance_id || ''
-		}
+		let lines;
 		if (props.instance_id){
-			this.state.lines = props.dash.programs[props.instance_id].console.slice()
+			lines = props.dash.programs[props.instance_id].console.slice()
 		}
 		else {
-			this.state.lines = props.engine.console.slice()
+			lines = props.engine.console.slice()
 		}
+
+		this.state = {
+			instance_id: props.instance_id || '',
+			lines: lines
+		}
+		
 	}
 
-	__setup(){
-		if (this.state.instance_id){
-			var program = this.props.dash.programs[this.state.instance_id];
+	__setup(instance_id){
+		console.log('[DeviceConsole] setting up... '+instance_id);
+		if (this.handlerID) this.__cleanUp();
+
+		var lines;
+		if (instance_id){
+			var program = this.props.dash.programs[instance_id];
 			this.handlerID = program.on('console-data', (lines)=>{
 				// console.log("New Lines from Program", lines);
 				this.setState({
 					lines: this.state.lines.concat(lines)
 				})
 			})
+			lines = program.console.slice()
 		}
 		else {
 			this.handlerID = this.props.engine.on('console-data', (lines)=>{
 				// console.log("New Lines from Engine", lines);
 				this.setState({
-					lines: this.state.lines.concat(lines)	
+					lines: this.state.lines.concat(lines)
 				})
 			})
+			lines = this.props.engine.console.slice()
 		}
+
+		this.setState({
+			instance_id: instance_id || '',
+			lines: lines
+		});
 	}
 	__cleanUp(){
+		console.log('[DeviceConsole] cleaning up... '+this.state.instance_id+',  '+this.handlerID);
 		if (this.state.instance_id){
 			this.props.dash.programs[this.state.instance_id].removeHandler('console-data', this.handlerID);
 		}
@@ -50,7 +66,7 @@ class DeviceConsole extends React.Component{
 	}
 
 	componentDidMount(){
-		this.__setup()
+		this.__setup(this.state.instance_id);
 	}
 
 	componentWillUnmount(){
@@ -64,22 +80,24 @@ class DeviceConsole extends React.Component{
 
 	selectConsole(instance_id){
 		// console.log(instance_id);
+		console.log('Selecting Console', this.state);
 
-		this.__cleanUp();
+		// this.__cleanUp();
 
-		var lines;
-		if (instance_id){
-			lines = this.props.dash.programs[instance_id].console.slice()
-		}
-		else {
-			lines = this.props.engine.console.slice()
-		}
+		// var lines;
+		// if (instance_id){
+		// 	lines = this.props.dash.programs[instance_id].console.slice()
+		// }
+		// else {
+		// 	lines = this.props.engine.console.slice()
+		// }
 
-		this.setState({
-			instance_id: instance_id || '',
-			lines: lines
-		});
-		this.__setup();
+		// this.setState({
+		// 	instance_id: instance_id || '',
+		// 	lines: lines
+		// });
+
+		this.__setup(instance_id);
 		
 		
 

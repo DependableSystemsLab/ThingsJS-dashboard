@@ -5,7 +5,7 @@ import {ListGroup, ListGroupItem, ButtonGroup, Button, Dropdown, Form, FormContr
 class ApplicationCtrl extends React.Component {
 	constructor (props){
 		super();
-		console.log(props);
+		// console.log(props);
 		this.$dash = props.dash
 
 		this.state = {

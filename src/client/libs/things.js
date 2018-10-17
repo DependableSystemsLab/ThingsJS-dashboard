@@ -241,7 +241,7 @@ FileSystem.prototype.get = function(abs_path){
 					data.files = [];
 					Object.keys(data.content)
 						.forEach(function(key){
-							console.log(data.content[key]);
+							// console.log(data.content[key]);
 							if (data.content[key].type === 'file') data.files.push(key);
 							else if (data.content[key].type === 'directory') data.dirs.push(key);
 							else console.log('Response from GFS server contains unexpected data');

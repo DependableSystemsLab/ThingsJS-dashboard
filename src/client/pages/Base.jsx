@@ -17,7 +17,7 @@ function NavListItem (props){
 export default class Base extends React.Component {
 	constructor(props, context){
 		super()
-		console.log('Base Component Created', context);
+		// console.log('Base Component Created', context);
 	}
 	render(){
 		return (
