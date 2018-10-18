@@ -320,7 +320,7 @@ class DevicePanel extends React.Component {
 				panelBody = <DeviceInfo engine={this.state.engine} programs={this.props.programs} panel={this}/>
 			}
 			else if (this.state.view_mode === 'graph'){
-				panelBody = <DeviceGraph engine={this.state.engine} width={'100%'} height={'180px'}/>
+				panelBody = <DeviceGraph engine={this.state.engine} width={'100%'} height={'180px'} dash={this.$dash}/>
 			}
 			else if (this.state.view_mode === 'console'){
 				panelBody = <DeviceConsole engine={this.state.engine} instance_id={this.state.selected_program} ctrl={ctrl} dash={this.$dash}/>

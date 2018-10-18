@@ -15,6 +15,7 @@ class DeviceGraph extends React.Component {
 	constructor(props){
 		super();
 
+		this.$dash = props.dash;
 		this.engine = props.engine;
 		this.d3 = {};
 		this.handlers = {};
@@ -161,6 +162,7 @@ class DeviceGraph extends React.Component {
 		var plots = {};
 
 		procs.forEach((proc, index)=>{
+			// if (proc.status !== 'Exited'){
 			plots[proc.instance_id] = this.props.programs[proc.instance_id].stats.slice();
 
 			var procData = plots[proc.instance_id].map((item)=>{
@@ -172,6 +174,7 @@ class DeviceGraph extends React.Component {
 										.attr('stroke', colors(index))
 										.attr('stroke-width', 2)
 										.attr('fill', 'none');
+			// }
 		});
 
 		this.state.plots = plots;
@@ -305,6 +308,55 @@ class DeviceGraph extends React.Component {
 		console.log('DeviceGraph MOUNTED');
 		this.__init_d3();
 
+		// subscribe to program events
+		this.programEvents = this.$dash.on('program-monitor-event', (program)=>{
+			console.log('[DeviceGraph] Program Event', program, this.engine);
+			if ((program.engine === this.engine) 
+				&& !(program.id in this.handlers)){
+				this.handlers[program.id] = program.on('resource-report', (data)=>{
+					var memory = MB(data.memory.heapUsed);
+					if (memory > this.max_memory) this.max_memory = memory;
+
+					var state = {
+						plots: Object.assign({}, this.state.plots)
+					}
+					if (!state.plots[program.id]) state.plots[program.id] = [];
+					else state.plots[program.id] = this.state.plots[program.id].concat([ data ])
+					// console.log('New Process Data', data);
+					
+					this.setState(state);
+				});
+
+				// plots[program.id] = program.stats.slice();
+				var plot = program.stats.slice();
+				this.state.plots[program.id] = plot;
+
+				if (!(program.id in this.d3.lines)){
+					var procData = plot.map((item)=>{
+						return { timestamp: item.timestamp, value: item.cpu }
+					});
+					this.d3.lines[program.id] = this.d3.graph.append('path')
+												.attr('d', this.d3.lineFunc(procData))
+												.attr('stroke', this.d3.colors(Object.keys(this.state.plots).length))
+												.attr('stroke-width', 2)
+												.attr('fill', 'none');
+				}
+				
+				this.setState({});	
+			}
+			else if ((program.engine !== this.engine)
+				&& (program.id in this.state.plots)){
+				program.removeHandler('resource-report', this.handlers[program.id]);
+				delete this.handlers[program.id];
+				// delete this.d3.lines[program.id];
+				// delete this.state.plots[program.id];
+				this.setState({});
+			}
+			// this.__init_d3();
+			// this.__redraw_d3();
+			// this.setState({});
+		});
+
 		this.handlerID = this.engine.on('resource-report', (data)=>{
 			// console.log(data.timestamp+'    CPU: '+data.cpu+'    MEMORY: '+data.memory.heapUsed);
 			var memory = MB(data.memory.heapUsed);
@@ -324,20 +376,22 @@ class DeviceGraph extends React.Component {
 
 		var procs = this.engine.getProcesses();
 		procs.forEach((proc)=>{
-			var handlerID = this.props.programs[proc.instance_id].on('resource-report', (data)=>{
-				var memory = MB(data.memory.heapUsed);
-				if (memory > this.max_memory) this.max_memory = memory;
+			if (proc.status !== 'Exited'){
+				var handlerID = this.props.programs[proc.instance_id].on('resource-report', (data)=>{
+					var memory = MB(data.memory.heapUsed);
+					if (memory > this.max_memory) this.max_memory = memory;
 
-				var state = {
-					plots: Object.assign({}, this.state.plots)
-				}
-				if (!state.plots[proc.instance_id]) state.plots[proc.instance_id] = [];
-				else state.plots[proc.instance_id] = this.state.plots[proc.instance_id].concat([ data ])
-				// console.log('New Process Data', data);
-				
-				this.setState(state);
-			});
-			this.handlers[proc.instance_id] = handlerID;
+					var state = {
+						plots: Object.assign({}, this.state.plots)
+					}
+					if (!state.plots[proc.instance_id]) state.plots[proc.instance_id] = [];
+					else state.plots[proc.instance_id] = this.state.plots[proc.instance_id].concat([ data ])
+					// console.log('New Process Data', data);
+					
+					this.setState(state);
+				});
+				this.handlers[proc.instance_id] = handlerID;
+			}
 		});
 	}
 
@@ -349,6 +403,7 @@ class DeviceGraph extends React.Component {
 	componentWillUnmount(){
 		// clearInterval(this.timer);
 		this.engine.removeHandler('resource-report', this.handlerID);
+		this.$dash.removeHandler('program-monitor-event', this.programEvents);
 		Object.keys(this.handlers).forEach((instance_id)=>{
 			this.props.programs[instance_id].removeHandler('resource-report', this.handlers[instance_id]);
 		})
@@ -401,20 +456,31 @@ class DeviceGraph extends React.Component {
 						{
 							Object.keys(this.state.plots).map((instance_id, index)=>{
 								var program = this.props.programs[instance_id];
-								var popover = (
-									<Popover id="popover-device-menu" title={program.instance_id}>
-										<ProgramButtonGroup program={program}/>
-									</Popover>
-								)
-								return (
-									<OverlayTrigger key={index} trigger="click" placement="bottom" overlay={popover} rootClose>
-										<div className={"list-group-item graph-legend-item program-status-"+program.status.toLowerCase()}>
+								if (program.engine === this.engine){
+									var popover = (
+										<Popover id="popover-device-menu" title={program.instance_id}>
+											<ProgramButtonGroup program={program}/>
+										</Popover>
+									)
+									return (
+										<OverlayTrigger key={index} trigger="click" placement="bottom" overlay={popover} rootClose>
+											<div className={"list-group-item graph-legend-item program-status-"+program.status.toLowerCase()}>
+												<span className="graph-legend-item-bar"
+													 style={{ background: this.d3.colors(index) }}></span>
+												<span>{program.code_name} <small>{instance_id}</small></span>
+											</div>
+										</OverlayTrigger>
+									)
+								}
+								else {
+									return (
+										<div key={index} className={"list-group-item graph-legend-item program-status-exited"}>
 											<span className="graph-legend-item-bar"
 												 style={{ background: this.d3.colors(index) }}></span>
 											<span>{program.code_name} <small>{instance_id}</small></span>
 										</div>
-									</OverlayTrigger>
-								)
+									)
+								}
 							})
 						}
 					</ListGroup>

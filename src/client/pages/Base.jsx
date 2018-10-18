@@ -53,14 +53,14 @@ export default class Base extends React.Component {
 						  	<NavListItem to="/" activeClassName="active" exact>
 							  Home
 							</NavListItem>
-						  	<NavListItem to="/schedule" activeClassName="active">
-							  Schedule
+							<NavListItem to="/files" activeClassName="active">
+							  Files
 							</NavListItem>
 							<NavListItem to="/applications" activeClassName="active">
 							  Applications
 							</NavListItem>
-							<NavListItem to="/files" activeClassName="active">
-							  Files
+						  	<NavListItem to="/schedule" activeClassName="active">
+							  Schedule
 							</NavListItem>
 						  </ul>
 

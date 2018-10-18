@@ -26,7 +26,7 @@ class DeviceConsole extends React.Component{
 	}
 
 	__setup(instance_id){
-		console.log('[DeviceConsole] setting up... '+instance_id);
+		// console.log('[DeviceConsole] setting up... '+instance_id);
 		if (this.handlerID) this.__cleanUp();
 
 		var lines;
