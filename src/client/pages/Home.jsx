@@ -3,6 +3,7 @@ import { Grid, Row, Col, Popover, ListGroup, ListGroupItem } from 'react-bootstr
 
 import DeviceList from '../containers/DeviceList/';
 import DevicePanel from '../containers/DevicePanel/';
+import OutputViewer from '../containers/OutputViewer/';
 
 export default class Home extends React.Component {
 	constructor(){
@@ -46,6 +47,7 @@ export default class Home extends React.Component {
 			    <Col xs={12} md={4}>
 			      <h4>Devices</h4>
 			      <DeviceList menuFunc={this.DeviceMenu.bind(this)} ></DeviceList>
+			      <OutputViewer dash={this.props.dash}/>
 			    </Col>
 			    <Col xs={12} md={8}>
 			    	<DevicePanel dash={this.props.dash} engine={this.state.top}></DevicePanel>

@@ -43,7 +43,9 @@ class StreamViewer extends React.Component {
 			var mode = StreamViewer.MIMETYPES[this.props.mimeType];
 			switch(mode){
 				case 'image':
-					stream = <img src={'data:'+this.props.mimeType+';base64,'+this.state.data}/>
+					stream = this.state.data ?
+						<img src={'data:'+this.props.mimeType+';base64,'+this.state.data} style={{ width: '100%' }}/>
+						: <p>No data from stream</p>
 					break;
 				case 'json':
 					break;
@@ -52,8 +54,12 @@ class StreamViewer extends React.Component {
 				case 'html':
 					break;
 				default:
+					stream = <p>Cannot view MimeType = {this.props.mimeType}</p>
 					break;
 			}
+		}
+		else {
+			stream = <p>No stream selected</p>
 		}
 		return (
 			<div>

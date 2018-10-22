@@ -179,13 +179,13 @@ class DeviceOutput extends React.Component{
 
 		return (
 			<Row>
-				<Col xs={12} md={8}>
+				<Col xs={12} md={7}>
 					<StreamViewer
 						pubsub={this.$dash.pubsub} 
 						topic={this.state.topic}
 						mimeType={this.state.mimeType}/>
 				</Col>
-				<Col xs={12} md={4}>
+				<Col xs={12} md={5}>
 					{outputs}
 				</Col>
 			</Row>
